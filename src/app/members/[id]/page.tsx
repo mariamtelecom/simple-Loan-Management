@@ -11,6 +11,7 @@ import { FinancialSummaryCard } from '@/components/FinancialSummaryCard';
 import { LedgerTable } from '@/components/LedgerTable';
 import { TransactionModal } from '@/components/TransactionModal';
 import { MemberFormModal } from '@/components/MemberFormModal';
+import { DeleteMemberModal } from '@/components/DeleteMemberModal';
 import { Member, LedgerRowCalculation, FinancialSummary, Transaction } from '@/lib/types';
 import { 
   getMemberById, 
@@ -46,6 +47,7 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
 
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadMemberData = async () => {
@@ -82,12 +84,9 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
     await loadMemberData();
   };
 
-  const handleDeleteMember = async () => {
-    if (!member) return;
-    if (confirm(t.confirmDelete)) {
-      await deleteMember(member.id);
-      router.push('/');
-    }
+  const handleConfirmDeleteMember = async (id: string) => {
+    await deleteMember(id);
+    router.push('/');
   };
 
   const handlePrint = () => {
@@ -166,7 +165,7 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
               </button>
 
               <button
-                onClick={handleDeleteMember}
+                onClick={() => setIsDeleteModalOpen(true)}
                 className="btn btn-danger btn-sm"
                 title={t.deleteMember}
               >
@@ -211,6 +210,15 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleUpdateMember}
         initialData={member}
+        lang={lang}
+      />
+
+      {/* 2-Step Verification Delete Member Modal */}
+      <DeleteMemberModal
+        isOpen={isDeleteModalOpen}
+        member={member}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirmDelete={handleConfirmDeleteMember}
         lang={lang}
       />
     </>

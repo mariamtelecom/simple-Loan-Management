@@ -14,14 +14,16 @@ import {
   CheckCircle2,
   User,
   ShieldCheck,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import styles from './page.module.css';
 import { Navbar } from '@/components/Navbar';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { SuccessModal } from '@/components/SuccessModal';
+import { DeleteMemberModal } from '@/components/DeleteMemberModal';
 import { Member } from '@/lib/types';
-import { getMembers, createMember, getCalculatedLedger, getDashboardStats } from '@/lib/db';
+import { getMembers, createMember, deleteMember, getCalculatedLedger, getDashboardStats } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 
 export default function DashboardPage() {
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [createdSuccessMember, setCreatedSuccessMember] = useState<Member | null>(null);
+  const [deletingMember, setDeletingMember] = useState<Member | null>(null);
 
   const [stats, setStats] = useState({
     totalGranted: 0,
@@ -71,6 +74,12 @@ export default function DashboardPage() {
     const newM = await createMember(data);
     await loadData();
     setCreatedSuccessMember(newM);
+  };
+
+  const handleConfirmDeleteDashboardMember = async (id: string) => {
+    await deleteMember(id);
+    await loadData();
+    setDeletingMember(null);
   };
 
   // Filter members by member_no, name, mobile, nid_number, relative name, or guarantor details
@@ -244,10 +253,20 @@ export default function DashboardPage() {
                         <span>{m.mobile || '-'}</span>
                       </div>
 
-                      <Link href={`/members/${m.id}`} className="btn btn-secondary btn-sm">
-                        <span>পাসবই দেখুন</span>
-                        <ArrowRight size={14} />
-                      </Link>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <button
+                          onClick={() => setDeletingMember(m)}
+                          className="btn btn-danger btn-sm"
+                          title="সদস্য স্থায়ীভাবে মুছে ফেলুন"
+                          style={{ padding: '0.4rem 0.55rem' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <Link href={`/members/${m.id}`} className="btn btn-secondary btn-sm">
+                          <span>পাসবই দেখুন</span>
+                          <ArrowRight size={14} />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 );
@@ -282,6 +301,15 @@ export default function DashboardPage() {
         isOpen={createdSuccessMember !== null}
         member={createdSuccessMember}
         onClose={() => setCreatedSuccessMember(null)}
+        lang={lang}
+      />
+
+      {/* 2-Step Verification Delete Member Modal */}
+      <DeleteMemberModal
+        isOpen={deletingMember !== null}
+        member={deletingMember}
+        onClose={() => setDeletingMember(null)}
+        onConfirmDelete={handleConfirmDeleteDashboardMember}
         lang={lang}
       />
     </>
