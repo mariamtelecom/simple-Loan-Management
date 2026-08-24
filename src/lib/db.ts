@@ -246,46 +246,69 @@ export async function getNextAutoMemberAndBookNo(): Promise<{
 }
 
 export async function getMembers(): Promise<Member[]> {
-  // Try 1: Primary Supabase DB
+  const mergedMap = new Map<string, Member>();
+
+  // 1. Try Primary Supabase Cloud DB
   if (isPrimaryConfigured && supabasePrimary) {
     try {
       const { data, error } = await supabasePrimary
         .from('members')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && data) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(LOCAL_STORAGE_MEMBERS_KEY, JSON.stringify(data));
-        }
-        return data as Member[];
+      if (!error && data && data.length > 0) {
+        data.forEach((m: Member) => {
+          const key = m.id || m.member_no;
+          if (key) mergedMap.set(key, m);
+        });
       }
     } catch (e) {
       console.warn('Primary Supabase fetch failed', e);
     }
   }
 
-  // Try 2: Secondary Supabase DB
+  // 2. Try Secondary Supabase Cloud DB
   if (isSecondaryConfigured && supabaseSecondary) {
     try {
       const { data, error } = await supabaseSecondary
         .from('members')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && data) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(LOCAL_STORAGE_MEMBERS_KEY, JSON.stringify(data));
-        }
-        return data as Member[];
+      if (!error && data && data.length > 0) {
+        data.forEach((m: Member) => {
+          const key = m.id || m.member_no;
+          if (key && !mergedMap.has(key)) {
+            mergedMap.set(key, m);
+          }
+        });
       }
     } catch (e) {
       console.warn('Secondary Supabase fetch failed', e);
     }
   }
 
-  // Try 3: Local Storage Backup
+  // 3. Try Local Storage Backup / Seed Data
   initializeLocalStorage();
-  const raw = localStorage.getItem(LOCAL_STORAGE_MEMBERS_KEY);
-  return raw ? JSON.parse(raw) : SEED_MEMBERS;
+  const raw = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_MEMBERS_KEY) : null;
+  const localMembers: Member[] = raw ? JSON.parse(raw) : SEED_MEMBERS;
+
+  localMembers.forEach((m: Member) => {
+    const key = m.id || m.member_no;
+    if (key && !mergedMap.has(key)) {
+      mergedMap.set(key, m);
+    }
+  });
+
+  const mergedList = Array.from(mergedMap.values());
+  const finalMembers = mergedList.length > 0 ? mergedList : SEED_MEMBERS;
+
+  // Keep final list ordered by created_at descending
+  finalMembers.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
+  if (typeof window !== 'undefined' && finalMembers.length > 0) {
+    localStorage.setItem(LOCAL_STORAGE_MEMBERS_KEY, JSON.stringify(finalMembers));
+  }
+
+  return finalMembers;
 }
 
 export async function getMemberById(id: string): Promise<Member | null> {
@@ -347,6 +370,21 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
         .single();
       if (!error && data) {
         newMember = data as Member;
+      } else if (error) {
+        console.warn('Primary Supabase insert warning, trying basic payload fallback:', error.message);
+        // Fallback: If new columns fail due to unmigrated DB table schema, retry with basic payload
+        const basicPayload = { ...memberPayload };
+        delete (basicPayload as Record<string, unknown>).father_mother_spouse;
+        delete (basicPayload as Record<string, unknown>).guarantor_father_mother_spouse;
+
+        const { data: fbData } = await supabasePrimary
+          .from('members')
+          .insert([basicPayload])
+          .select()
+          .single();
+        if (fbData) {
+          newMember = { ...newMember, ...fbData };
+        }
       }
     } catch (e) {
       console.warn('Primary Supabase write failed', e);
@@ -356,7 +394,13 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
   // 2. Parallel Write to Secondary Supabase Cloud DB
   if (isSecondaryConfigured && supabaseSecondary) {
     try {
-      await supabaseSecondary.from('members').insert([memberPayload]);
+      const { error } = await supabaseSecondary.from('members').insert([memberPayload]);
+      if (error) {
+        const basicPayload = { ...memberPayload };
+        delete (basicPayload as Record<string, unknown>).father_mother_spouse;
+        delete (basicPayload as Record<string, unknown>).guarantor_father_mother_spouse;
+        await supabaseSecondary.from('members').insert([basicPayload]);
+      }
     } catch (e) {
       console.warn('Secondary Supabase write failed', e);
     }
@@ -441,7 +485,9 @@ export async function deleteMember(id: string): Promise<boolean> {
 // ----------------------------------------------------------------------
 
 export async function getTransactionsForMember(memberId: string): Promise<Transaction[]> {
-  // Try Primary Supabase DB
+  const mergedTxMap = new Map<string, Transaction>();
+
+  // 1. Try Primary Supabase DB
   if (isPrimaryConfigured && supabasePrimary) {
     try {
       const { data, error } = await supabasePrimary
@@ -450,15 +496,17 @@ export async function getTransactionsForMember(memberId: string): Promise<Transa
         .eq('member_id', memberId)
         .order('date', { ascending: true })
         .order('created_at', { ascending: true });
-      if (!error && data) {
-        return data as Transaction[];
+      if (!error && data && data.length > 0) {
+        data.forEach((t: Transaction) => {
+          if (t.id) mergedTxMap.set(t.id, t);
+        });
       }
     } catch (e) {
       console.warn('Primary Supabase transactions fetch failed', e);
     }
   }
 
-  // Try Secondary Supabase DB
+  // 2. Try Secondary Supabase DB
   if (isSecondaryConfigured && supabaseSecondary) {
     try {
       const { data, error } = await supabaseSecondary
@@ -467,21 +515,30 @@ export async function getTransactionsForMember(memberId: string): Promise<Transa
         .eq('member_id', memberId)
         .order('date', { ascending: true })
         .order('created_at', { ascending: true });
-      if (!error && data) {
-        return data as Transaction[];
+      if (!error && data && data.length > 0) {
+        data.forEach((t: Transaction) => {
+          if (t.id && !mergedTxMap.has(t.id)) {
+            mergedTxMap.set(t.id, t);
+          }
+        });
       }
     } catch (e) {
       console.warn('Secondary Supabase transactions fetch failed', e);
     }
   }
 
-  // Fallback to Local Backup
+  // 3. Try Local Storage Backup
   initializeLocalStorage();
-  const raw = localStorage.getItem(LOCAL_STORAGE_TRANSACTIONS_KEY);
+  const raw = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_TRANSACTIONS_KEY) : null;
   const all: Transaction[] = raw ? JSON.parse(raw) : SEED_TRANSACTIONS;
-  return all
-    .filter(t => t.member_id === memberId)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  all.filter(t => t.member_id === memberId).forEach((t: Transaction) => {
+    if (t.id && !mergedTxMap.has(t.id)) {
+      mergedTxMap.set(t.id, t);
+    }
+  });
+
+  const mergedList = Array.from(mergedTxMap.values());
+  return mergedList.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
 export async function getCalculatedLedger(member: Member): Promise<{

@@ -19,6 +19,7 @@ import {
 import styles from './page.module.css';
 import { Navbar } from '@/components/Navbar';
 import { MemberFormModal } from '@/components/MemberFormModal';
+import { SuccessModal } from '@/components/SuccessModal';
 import { Member } from '@/lib/types';
 import { getMembers, createMember, getCalculatedLedger, getDashboardStats } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [createdSuccessMember, setCreatedSuccessMember] = useState<Member | null>(null);
 
   const [stats, setStats] = useState({
     totalGranted: 0,
@@ -66,8 +68,9 @@ export default function DashboardPage() {
   }, []);
 
   const handleCreateMember = async (data: Omit<Member, 'id' | 'created_at'>) => {
-    await createMember(data);
+    const newM = await createMember(data);
     await loadData();
+    setCreatedSuccessMember(newM);
   };
 
   // Filter members by member_no, name, mobile, nid_number, relative name, or guarantor details
@@ -271,6 +274,14 @@ export default function DashboardPage() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleCreateMember}
+        lang={lang}
+      />
+
+      {/* New Member Creation Success Confirmation Modal */}
+      <SuccessModal
+        isOpen={createdSuccessMember !== null}
+        member={createdSuccessMember}
+        onClose={() => setCreatedSuccessMember(null)}
         lang={lang}
       />
     </>
