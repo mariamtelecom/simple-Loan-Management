@@ -1,8 +1,26 @@
 import { Member, Transaction, LedgerRowCalculation, FinancialSummary } from './types';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
-const LOCAL_STORAGE_MEMBERS_KEY = 'loan_mgmt_members_v2';
-const LOCAL_STORAGE_TRANSACTIONS_KEY = 'loan_mgmt_transactions_v2';
+const LOCAL_STORAGE_MEMBERS_KEY = 'loan_mgmt_members_v3';
+const LOCAL_STORAGE_TRANSACTIONS_KEY = 'loan_mgmt_transactions_v3';
+
+// Helper to convert English digits to Bengali numerals
+export function toBengaliNumber(num: number | string): string {
+  const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (d) => bengaliDigits[parseInt(d, 10)]);
+}
+
+// Helper to parse both English and Bengali number strings into integers
+export function parseNumeral(str: string): number {
+  if (!str) return 0;
+  const bengaliToEnglish: Record<string, string> = {
+    '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+    '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+  };
+  const normalized = str.replace(/[০-৯]/g, (b) => bengaliToEnglish[b] || b);
+  const num = parseInt(normalized.replace(/\D/g, ''), 10);
+  return isNaN(num) ? 0 : num;
+}
 
 // Initial realistic Bengali seed data based on handwritten image
 const SEED_MEMBERS: Member[] = [
@@ -18,6 +36,7 @@ const SEED_MEMBERS: Member[] = [
     mobile: '01712345678',
     book_no: '১',
     guarantor_name: 'মোঃ রফিকুল ইসলাম',
+    nid_number: '19922694152000125',
     photo_url: '',
     nid_image_url: '',
     status: 'active',
@@ -35,6 +54,7 @@ const SEED_MEMBERS: Member[] = [
     mobile: '01898765432',
     book_no: '১',
     guarantor_name: 'আব্দুল কুদ্দুস',
+    nid_number: '19882694152000102',
     photo_url: '',
     nid_image_url: '',
     status: 'active',
@@ -52,6 +72,7 @@ const SEED_MEMBERS: Member[] = [
     mobile: '01911223344',
     book_no: '২',
     guarantor_name: 'মোঃ শাহ আলম',
+    nid_number: '19952694152000140',
     photo_url: '',
     nid_image_url: '',
     status: 'active',
@@ -120,6 +141,33 @@ function initializeLocalStorage() {
   }
 }
 
+export async function getNextAutoMemberAndBookNo(): Promise<{
+  nextMemberNo: string;
+  nextBookNo: string;
+}> {
+  const members = await getMembers();
+  let maxMemberNo = 125;
+
+  for (const m of members) {
+    const parsed = parseNumeral(m.member_no);
+    if (parsed > maxMemberNo) {
+      maxMemberNo = parsed;
+    }
+  }
+
+  const nextVal = maxMemberNo + 1;
+  const nextMemberNo = toBengaliNumber(nextVal);
+
+  const memberCount = members.length;
+  const bookNum = Math.max(1, Math.floor(memberCount / 20) + 1);
+  const nextBookNo = toBengaliNumber(bookNum);
+
+  return {
+    nextMemberNo,
+    nextBookNo
+  };
+}
+
 export async function getMembers(): Promise<Member[]> {
   if (isSupabaseConfigured && supabase) {
     try {
@@ -144,8 +192,19 @@ export async function getMemberById(id: string): Promise<Member | null> {
 }
 
 export async function createMember(member: Omit<Member, 'id' | 'created_at'>): Promise<Member> {
+  let finalMemberNo = member.member_no;
+  let finalBookNo = member.book_no;
+
+  if (!finalMemberNo || !finalBookNo) {
+    const autoGen = await getNextAutoMemberAndBookNo();
+    if (!finalMemberNo) finalMemberNo = autoGen.nextMemberNo;
+    if (!finalBookNo) finalBookNo = autoGen.nextBookNo;
+  }
+
   const newMember: Member = {
     ...member,
+    member_no: finalMemberNo,
+    book_no: finalBookNo,
     id: 'm-' + Date.now(),
     created_at: new Date().toISOString()
   };
@@ -155,18 +214,19 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
       const { data, error } = await supabase
         .from('members')
         .insert([{
-          member_no: member.member_no,
-          name: member.name,
-          loan_amount: Number(member.loan_amount),
-          savings_initial: Number(member.savings_initial),
-          loan_purpose: member.loan_purpose,
-          admission_date: member.admission_date,
-          total_installments: Number(member.total_installments),
-          mobile: member.mobile,
-          book_no: member.book_no,
-          guarantor_name: member.guarantor_name || '',
-          photo_url: member.photo_url || '',
-          nid_image_url: member.nid_image_url || '',
+          member_no: newMember.member_no,
+          name: newMember.name,
+          loan_amount: Number(newMember.loan_amount),
+          savings_initial: Number(newMember.savings_initial),
+          loan_purpose: newMember.loan_purpose,
+          admission_date: newMember.admission_date,
+          total_installments: Number(newMember.total_installments),
+          mobile: newMember.mobile,
+          book_no: newMember.book_no,
+          guarantor_name: newMember.guarantor_name || '',
+          nid_number: newMember.nid_number || '',
+          photo_url: newMember.photo_url || '',
+          nid_image_url: newMember.nid_image_url || '',
           status: 'active'
         }])
         .select()

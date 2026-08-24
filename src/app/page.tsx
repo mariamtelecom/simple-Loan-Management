@@ -11,7 +11,10 @@ import {
   ArrowRight, 
   Phone, 
   Search,
-  CheckCircle2
+  CheckCircle2,
+  User,
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 import styles from './page.module.css';
 import { Navbar } from '@/components/Navbar';
@@ -67,14 +70,16 @@ export default function DashboardPage() {
     await loadData();
   };
 
-  // Filter members by member_no, name or phone
+  // Filter members by member_no, name, mobile, nid_number, or guarantor_name
   const filteredMembers = members.filter((m) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
       m.name.toLowerCase().includes(q) ||
       m.member_no.toLowerCase().includes(q) ||
-      m.mobile.toLowerCase().includes(q)
+      m.mobile.toLowerCase().includes(q) ||
+      (m.nid_number && m.nid_number.toLowerCase().includes(q)) ||
+      (m.guarantor_name && m.guarantor_name.toLowerCase().includes(q))
     );
   });
 
@@ -134,7 +139,7 @@ export default function DashboardPage() {
                 <span>{t.totalCollectedLoan}</span>
                 <CheckCircle2 size={18} style={{ color: 'var(--primary)' }} />
               </div>
-              <div className={`${styles.statVal} textGreen`}>
+              <div className="textGreen" style={{ fontSize: '1.35rem', fontWeight: 800 }}>
                 ৳ {stats.totalCollected.toLocaleString()}
               </div>
             </div>
@@ -145,7 +150,7 @@ export default function DashboardPage() {
                 <span>{t.remainingLoanBalance}</span>
                 <DollarSign size={18} style={{ color: 'var(--accent-rose)' }} />
               </div>
-              <div className={`${styles.statVal} textRose`}>
+              <div className="textRose" style={{ fontSize: '1.35rem', fontWeight: 800 }}>
                 ৳ {stats.totalRemaining.toLocaleString()}
               </div>
             </div>
@@ -156,7 +161,7 @@ export default function DashboardPage() {
                 <span>{t.totalSavingsBalance}</span>
                 <Wallet size={18} style={{ color: 'var(--primary)' }} />
               </div>
-              <div className={`${styles.statVal} textGreen`}>
+              <div className="textGreen" style={{ fontSize: '1.35rem', fontWeight: 800 }}>
                 ৳ {stats.totalSavings.toLocaleString()}
               </div>
             </div>
@@ -165,7 +170,7 @@ export default function DashboardPage() {
           {/* Member Grid Title */}
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>
-              <Users size={20} className="textGreen" />
+              <Users size={20} style={{ color: 'var(--primary)' }} />
               <span>{t.memberList}</span>
             </h2>
             <span className="badge badge-info">
@@ -181,11 +186,36 @@ export default function DashboardPage() {
                 return (
                   <div key={m.id} className={styles.memberCard}>
                     <div className={styles.memberTop}>
-                      <div className={styles.memberMeta}>
-                        <span className={styles.memberNo}>{t.memberNo}: {m.member_no}</span>
-                        <h3 className={styles.memberName}>{m.name}</h3>
+                      {/* Avatar Photo (or Default Icon) */}
+                      <div className={styles.cardAvatar}>
+                        {m.photo_url ? (
+                          <img src={m.photo_url} alt={m.name} className={styles.cardAvatarImg} />
+                        ) : (
+                          <User size={24} />
+                        )}
                       </div>
-                      <span className={styles.bookBadge}>{t.bookNo}: {m.book_no || '১'}</span>
+
+                      <div className={styles.memberMeta}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span className={styles.memberNo}>{t.memberNo}: {m.member_no}</span>
+                          <span className={styles.bookBadge}>{t.bookNo}: {m.book_no || '১'}</span>
+                        </div>
+                        <h3 className={styles.memberName}>{m.name}</h3>
+
+                        {m.guarantor_name && (
+                          <div className={styles.guarantorText}>
+                            <ShieldCheck size={13} style={{ color: 'var(--primary)' }} />
+                            <span>জামিনদার: {m.guarantor_name}</span>
+                          </div>
+                        )}
+
+                        {m.nid_number && (
+                          <div className={styles.guarantorText} style={{ color: 'var(--text-muted)' }}>
+                            <FileText size={12} />
+                            <span>NID: {m.nid_number}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className={styles.financialRow}>

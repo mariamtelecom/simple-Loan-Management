@@ -9,7 +9,8 @@ export interface Member {
   total_installments: number;// কিস্তির সংখ্যা (e.g. 44)
   mobile: string;            // সদস্যের মোবাইল
   book_no: string;           // বই নং / পৃষ্ঠা (e.g. "১")
-  guarantor_name?: string;   // জামিনদারের নাম (Guarantor Name)
+  guarantor_name: string;    // জামিনদারের নাম (Guarantor Name)
+  nid_number: string;        // NID কার্ড নম্বর (NID Card Number)
   photo_url?: string;        // সদস্যের ছবি (Person Image)
   nid_image_url?: string;    // এনআইডি কার্ডের ছবি (NID Card Image)
   status?: 'active' | 'closed';

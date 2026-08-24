@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Upload, User, CreditCard, Trash2 } from 'lucide-react';
+import { X, Save, Upload, User, CreditCard, Trash2, Sparkles, CheckCircle } from 'lucide-react';
 import styles from './MemberFormModal.module.css';
 import { Member } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
+import { getNextAutoMemberAndBookNo } from '@/lib/db';
+import { compressImage, getBase64SizeKB } from '@/lib/imageCompressor';
 
 interface MemberFormModalProps {
   isOpen: boolean;
@@ -32,67 +34,84 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     admission_date: new Date().toISOString().split('T')[0],
     total_installments: '44',
     mobile: '',
-    book_no: '১',
+    book_no: '',
     guarantor_name: '',
+    nid_number: '',
     photo_url: '',
     nid_image_url: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [compressingField, setCompressingField] = useState<string | null>(null);
+  const [isAutoAssigned, setIsAutoAssigned] = useState(false);
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        member_no: initialData.member_no || '',
-        name: initialData.name || '',
-        loan_amount: String(initialData.loan_amount || ''),
-        savings_initial: String(initialData.savings_initial || ''),
-        loan_purpose: initialData.loan_purpose || '',
-        admission_date: initialData.admission_date || new Date().toISOString().split('T')[0],
-        total_installments: String(initialData.total_installments || 44),
-        mobile: initialData.mobile || '',
-        book_no: initialData.book_no || '১',
-        guarantor_name: initialData.guarantor_name || '',
-        photo_url: initialData.photo_url || '',
-        nid_image_url: initialData.nid_image_url || ''
-      });
-    } else {
-      setFormData({
-        member_no: '',
-        name: '',
-        loan_amount: '',
-        savings_initial: '0',
-        loan_purpose: '',
-        admission_date: new Date().toISOString().split('T')[0],
-        total_installments: '44',
-        mobile: '',
-        book_no: '১',
-        guarantor_name: '',
-        photo_url: '',
-        nid_image_url: ''
-      });
+    async function initForm() {
+      if (initialData) {
+        setIsAutoAssigned(false);
+        setFormData({
+          member_no: initialData.member_no || '',
+          name: initialData.name || '',
+          loan_amount: String(initialData.loan_amount || ''),
+          savings_initial: String(initialData.savings_initial || ''),
+          loan_purpose: initialData.loan_purpose || '',
+          admission_date: initialData.admission_date || new Date().toISOString().split('T')[0],
+          total_installments: String(initialData.total_installments || 44),
+          mobile: initialData.mobile || '',
+          book_no: initialData.book_no || '১',
+          guarantor_name: initialData.guarantor_name || '',
+          nid_number: initialData.nid_number || '',
+          photo_url: initialData.photo_url || '',
+          nid_image_url: initialData.nid_image_url || ''
+        });
+      } else {
+        setIsAutoAssigned(true);
+        const auto = await getNextAutoMemberAndBookNo();
+        setFormData({
+          member_no: auto.nextMemberNo,
+          name: '',
+          loan_amount: '',
+          savings_initial: '0',
+          loan_purpose: '',
+          admission_date: new Date().toISOString().split('T')[0],
+          total_installments: '44',
+          mobile: '',
+          book_no: auto.nextBookNo,
+          guarantor_name: '',
+          nid_number: '',
+          photo_url: '',
+          nid_image_url: ''
+        });
+      }
+    }
+
+    if (isOpen) {
+      initForm();
     }
   }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
-  // Helper to convert image file to Base64 data URL
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldKey: 'photo_url' | 'nid_image_url') => {
+  // Auto-compress image to ~200-250KB before storing in database
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldKey: 'photo_url' | 'nid_image_url') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setFormData((prev) => ({ ...prev, [fieldKey]: event.target!.result as string }));
-      }
-    };
-    reader.readAsDataURL(file);
+    setCompressingField(fieldKey);
+    try {
+      // Compress image target size 250KB
+      const compressedDataUrl = await compressImage(file, 250, 1000);
+      setFormData((prev) => ({ ...prev, [fieldKey]: compressedDataUrl }));
+    } catch (err) {
+      console.error('Image compression failed', err);
+    } finally {
+      setCompressingField(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.member_no || !formData.name) return;
+    if (!formData.name || !formData.mobile || !formData.guarantor_name) return;
 
     setSubmitting(true);
     try {
@@ -107,6 +126,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         mobile: formData.mobile,
         book_no: formData.book_no,
         guarantor_name: formData.guarantor_name,
+        nid_number: formData.nid_number,
         photo_url: formData.photo_url,
         nid_image_url: formData.nid_image_url,
         status: 'active'
@@ -134,22 +154,36 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         <form onSubmit={handleSubmit}>
           <div className={styles.form}>
             <div className={styles.grid}>
-              {/* Member No */}
+              {/* Member No (Auto Generated) */}
               <div className={styles.field}>
-                <label className={styles.label}>{t.memberNo} *</label>
+                <label className={styles.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>{t.memberNo} *</span>
+                  {isAutoAssigned && (
+                    <span className="badge badge-success" style={{ fontSize: '0.675rem', padding: '0.1rem 0.4rem' }}>
+                      <Sparkles size={10} /> অটো জেনারেট
+                    </span>
+                  )}
+                </label>
                 <input
                   type="text"
                   required
                   className={styles.input}
-                  placeholder="e.g. ১২৫ / 125"
+                  placeholder="e.g. ১২৬"
                   value={formData.member_no}
                   onChange={(e) => setFormData({ ...formData, member_no: e.target.value })}
                 />
               </div>
 
-              {/* Book No */}
+              {/* Book No (Auto Generated) */}
               <div className={styles.field}>
-                <label className={styles.label}>{t.bookNo}</label>
+                <label className={styles.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>{t.bookNo}</span>
+                  {isAutoAssigned && (
+                    <span className="badge badge-info" style={{ fontSize: '0.675rem', padding: '0.1rem 0.4rem' }}>
+                      <Sparkles size={10} /> অটো জেনারেট
+                    </span>
+                  )}
+                </label>
                 <input
                   type="text"
                   className={styles.input}
@@ -172,11 +206,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 />
               </div>
 
-              {/* Jamindar Name (Guarantor Name) */}
+              {/* Jamindar Name (Guarantor Name) - REQUIRED */}
               <div className={`${styles.field} ${styles.fullWidth}`}>
-                <label className={styles.label}>{t.guarantorName}</label>
+                <label className={styles.label}>{t.guarantorName} *</label>
                 <input
                   type="text"
+                  required
                   className={styles.input}
                   placeholder="e.g. জামিনদারের নাম (মোঃ রফিকুল ইসলাম)"
                   value={formData.guarantor_name}
@@ -184,7 +219,33 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 />
               </div>
 
-              {/* Person Photo Upload */}
+              {/* Member Mobile Number - REQUIRED */}
+              <div className={styles.field}>
+                <label className={styles.label}>{t.mobile} *</label>
+                <input
+                  type="tel"
+                  required
+                  className={styles.input}
+                  placeholder="01712345678"
+                  value={formData.mobile}
+                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                />
+              </div>
+
+              {/* NID Card Number */}
+              <div className={styles.field}>
+                <label className={styles.label}>{t.nidNumber} *</label>
+                <input
+                  type="text"
+                  required
+                  className={styles.input}
+                  placeholder="e.g. 19922694152000125"
+                  value={formData.nid_number}
+                  onChange={(e) => setFormData({ ...formData, nid_number: e.target.value })}
+                />
+              </div>
+
+              {/* Person Photo Upload with Auto Compression (~200KB) */}
               <div className={styles.field}>
                 <label className={styles.label}>{t.personPhoto}</label>
                 <div className={styles.uploadSection}>
@@ -196,16 +257,26 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     </div>
                   )}
 
-                  <label className={styles.fileInputLabel}>
-                    <Upload size={14} />
-                    <span>আপলোড করুন</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className={styles.hiddenFileInput}
-                      onChange={(e) => handleFileUpload(e, 'photo_url')}
-                    />
-                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                    <label className={styles.fileInputLabel}>
+                      <Upload size={14} />
+                      <span>{compressingField === 'photo_url' ? 'কমপ্রেস হচ্ছে...' : 'ছবি আপলোড'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={compressingField !== null}
+                        className={styles.hiddenFileInput}
+                        onChange={(e) => handleFileUpload(e, 'photo_url')}
+                      />
+                    </label>
+
+                    {formData.photo_url && (
+                      <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>
+                        <CheckCircle size={10} style={{ display: 'inline', marginRight: 2 }} />
+                        সাইজ: {getBase64SizeKB(formData.photo_url)} KB (কমপ্রেসড)
+                      </span>
+                    )}
+                  </div>
 
                   {formData.photo_url && (
                     <button
@@ -220,7 +291,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 </div>
               </div>
 
-              {/* NID Card Image Upload */}
+              {/* NID Card Image Upload with Auto Compression (~200KB) */}
               <div className={styles.field}>
                 <label className={styles.label}>{t.nidImage}</label>
                 <div className={styles.uploadSection}>
@@ -232,16 +303,26 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     </div>
                   )}
 
-                  <label className={styles.fileInputLabel}>
-                    <Upload size={14} />
-                    <span>NID আপলোড</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className={styles.hiddenFileInput}
-                      onChange={(e) => handleFileUpload(e, 'nid_image_url')}
-                    />
-                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                    <label className={styles.fileInputLabel}>
+                      <Upload size={14} />
+                      <span>{compressingField === 'nid_image_url' ? 'কমপ্রেস হচ্ছে...' : 'NID ছবি'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={compressingField !== null}
+                        className={styles.hiddenFileInput}
+                        onChange={(e) => handleFileUpload(e, 'nid_image_url')}
+                      />
+                    </label>
+
+                    {formData.nid_image_url && (
+                      <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>
+                        <CheckCircle size={10} style={{ display: 'inline', marginRight: 2 }} />
+                        সাইজ: {getBase64SizeKB(formData.nid_image_url)} KB (কমপ্রেসড)
+                      </span>
+                    )}
+                  </div>
 
                   {formData.nid_image_url && (
                     <button
@@ -317,18 +398,6 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, admission_date: e.target.value })}
                 />
               </div>
-
-              {/* Mobile */}
-              <div className={styles.field}>
-                <label className={styles.label}>{t.mobile}</label>
-                <input
-                  type="tel"
-                  className={styles.input}
-                  placeholder="01712345678"
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                />
-              </div>
             </div>
           </div>
 
@@ -344,7 +413,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             <button
               type="submit"
               className="btn btn-primary btn-sm"
-              disabled={submitting}
+              disabled={submitting || compressingField !== null}
             >
               <Save size={16} />
               <span>{submitting ? '...' : t.save}</span>

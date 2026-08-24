@@ -1,6 +1,6 @@
 -- ========================================================
 -- Simple Loan Management System - Supabase PostgreSQL Schema
--- Updated with Member Photo, NID Card Image & Guarantor Name
+-- Updated with Member Photo, NID Card Image, NID Number & Guarantor Name
 -- ========================================================
 
 -- Enable UUID extension if not enabled
@@ -16,9 +16,10 @@ CREATE TABLE IF NOT EXISTS public.members (
     loan_purpose VARCHAR(255) DEFAULT '',       -- ঋণের উদ্দেশ্য
     admission_date DATE DEFAULT CURRENT_DATE,   -- ভর্তির তারিখ
     total_installments INT DEFAULT 44,          -- কিস্তির সংখ্যা
-    mobile VARCHAR(30) DEFAULT '',              -- সদস্যের মোবাইল
+    mobile VARCHAR(30) NOT NULL DEFAULT '',     -- সদস্যের মোবাইল
     book_no VARCHAR(50) DEFAULT '1',            -- বই নং / পৃষ্ঠা
-    guarantor_name VARCHAR(255) DEFAULT '',     -- জামিনদারের নাম (Guarantor Name)
+    guarantor_name VARCHAR(255) NOT NULL DEFAULT '', -- জামিনদারের নাম (Guarantor Name)
+    nid_number VARCHAR(50) NOT NULL DEFAULT '', -- NID কার্ড নম্বর (NID Number)
     photo_url TEXT DEFAULT '',                  -- সদস্যের ছবি (Person Image Data URL/Link)
     nid_image_url TEXT DEFAULT '',              -- NID কার্ডের ছবি (NID Card Data URL/Link)
     status VARCHAR(20) DEFAULT 'active',        -- active, closed
