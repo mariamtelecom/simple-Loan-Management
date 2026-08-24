@@ -39,10 +39,12 @@
 .tableWrapper {
   overflow-x: auto;
   width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   font-size: 0.875rem;
   text-align: center;
@@ -174,6 +176,26 @@
 .deleteBtn:hover {
   color: #e11d48;
   background: #ffe4e6;
+}
+
+@media (max-width: 640px) {
+  .tableHeaderBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+  }
+  .tableHeaderBar > button {
+    width: 100%;
+    justify-content: center;
+  }
+  .paginationBar {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    text-align: center;
+    padding: 0.75rem 1rem;
+  }
 }
 
 /* Printable Paper Passbook Table Styling */

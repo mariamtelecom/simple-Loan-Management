@@ -64,10 +64,25 @@
 @media (max-width: 900px) {
   .summaryGrid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
   }
 }
 
-@media (max-width: 500px) {
+@media (max-width: 600px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    margin: 1rem 0;
+  }
+  .summaryCard {
+    padding: 0.85rem;
+  }
+  .amount {
+    font-size: 1.15rem;
+  }
+}
+
+@media (max-width: 380px) {
   .summaryGrid {
     grid-template-columns: 1fr;
   }

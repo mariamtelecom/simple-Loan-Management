@@ -234,14 +234,44 @@
 }
 
 @media (max-width: 700px) {
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .dashboardHeader > button {
+    width: 100%;
+    justify-content: center;
+  }
+  .heroTitle {
+    font-size: 1.35rem;
+  }
+  .heroSub {
+    font-size: 0.825rem;
+  }
   .statsGrid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
+  }
+  .statCard {
+    padding: 0.85rem;
+  }
+  .statVal {
+    font-size: 1.15rem;
   }
   .membersGrid {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
   }
-  .dashboardHeader {
-    flex-direction: column;
-    align-items: flex-start;
+  .memberCard {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
   }
 }

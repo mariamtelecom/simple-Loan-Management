@@ -135,13 +135,55 @@
 }
 
 @media (max-width: 768px) {
-  .searchInput {
-    width: 140px;
+  .navbar {
+    height: 3.75rem;
   }
-  .searchInput:focus {
-    width: 170px;
+  .inner {
+    gap: 0.5rem;
+  }
+  .brand {
+    gap: 0.5rem;
+  }
+  .logoIcon {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+  .brandTitle {
+    font-size: 0.9rem;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .brandSubtitle, .dbBadge {
     display: none;
+  }
+  .rightGroup {
+    gap: 0.35rem;
+  }
+  .searchInput {
+    width: 110px;
+    padding-left: 1.85rem;
+    font-size: 0.775rem;
+  }
+  .searchInput:focus {
+    width: 130px;
+  }
+  .langBtn {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brandTitle {
+    max-width: 120px;
+  }
+  .searchInput {
+    width: 90px;
+    padding-right: 0.4rem;
+  }
+  .searchInput:focus {
+    width: 110px;
   }
 }
