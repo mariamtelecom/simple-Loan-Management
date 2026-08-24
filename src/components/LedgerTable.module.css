@@ -1,0 +1,194 @@
+.ledgerContainer {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 2rem;
+}
+
+.tableHeaderBar {
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.4);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tableTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pageInfoBadge {
+  font-size: 0.825rem;
+  color: var(--primary);
+  background: rgba(16, 185, 129, 0.12);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.table th {
+  background: #1e293b;
+  color: var(--text-primary);
+  font-weight: 700;
+  padding: 0.65rem 0.5rem;
+  border: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.table th.groupHeader {
+  background: #0f172a;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.table th.savingsHeader {
+  color: var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+
+.table th.loanHeader {
+  color: var(--accent-amber);
+  border-bottom: 2px solid var(--accent-amber);
+}
+
+.table td {
+  padding: 0.6rem 0.5rem;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  height: 2.75rem; /* Fixed height to mimic physical ledger row */
+  vertical-align: middle;
+}
+
+.table tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table tr:hover td {
+  background: var(--bg-card-hover);
+}
+
+.table tr.emptyRow td {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.8rem;
+  opacity: 0.4;
+}
+
+.textGreen {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.textRose {
+  color: var(--accent-rose);
+  font-weight: 600;
+}
+
+.textBold {
+  font-weight: 700;
+}
+
+.signatureCell {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.paginationBar {
+  padding: 0.85rem 1.25rem;
+  background: rgba(15, 23, 42, 0.4);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.paginationNote {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pageBtn {
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.825rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.deleteBtn {
+  color: var(--text-muted);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.deleteBtn:hover {
+  color: var(--accent-rose);
+  background: rgba(244, 63, 94, 0.15);
+}
+
+/* Printable Paper Passbook Table Styling */
+@media print {
+  .ledgerContainer {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .tableHeaderBar, .paginationBar, .actionCol {
+    display: none !important;
+  }
+  .table th {
+    background: #e2e8f0 !important;
+    color: #000 !important;
+    border: 1px solid #000 !important;
+  }
+  .table td {
+    color: #000 !important;
+    border: 1px solid #000 !important;
+  }
+}
