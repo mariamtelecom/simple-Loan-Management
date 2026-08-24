@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText } from 'lucide-react';
+import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin } from 'lucide-react';
 import styles from './PassbookHeader.module.css';
 import { Member } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
@@ -94,15 +94,6 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
             </span>
           </div>
 
-          {/* Jamindar Name (Guarantor Name) */}
-          <div className={styles.infoItem}>
-            <span className={styles.label}>{t.guarantorName}</span>
-            <span className={styles.value} style={{ color: 'var(--primary)', fontWeight: 700 }}>
-              <ShieldCheck size={14} style={{ display: 'inline', marginRight: 4 }} />
-              {member.guarantor_name || '-'}
-            </span>
-          </div>
-
           {/* Member Mobile */}
           <div className={styles.infoItem}>
             <span className={styles.label}>{t.mobile}</span>
@@ -112,12 +103,48 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
             </span>
           </div>
 
-          {/* NID Card Number */}
+          {/* Member NID Card Number */}
           <div className={styles.infoItem}>
             <span className={styles.label}>{t.nidNumber}</span>
             <span className={styles.value}>
               <FileText size={14} style={{ display: 'inline', marginRight: 4 }} />
               {member.nid_number || '-'}
+            </span>
+          </div>
+
+          {/* Member Address */}
+          <div className={styles.infoItem}>
+            <span className={styles.label}>{t.memberAddress}</span>
+            <span className={styles.value}>
+              <MapPin size={14} style={{ display: 'inline', marginRight: 4 }} />
+              {member.address || '-'}
+            </span>
+          </div>
+
+          {/* Jamindar Name */}
+          <div className={styles.infoItem}>
+            <span className={styles.label}>{t.guarantorName}</span>
+            <span className={styles.value} style={{ color: 'var(--primary)', fontWeight: 700 }}>
+              <ShieldCheck size={14} style={{ display: 'inline', marginRight: 4 }} />
+              {member.guarantor_name || '-'}
+            </span>
+          </div>
+
+          {/* Jamindar Mobile */}
+          <div className={styles.infoItem}>
+            <span className={styles.label}>{t.guarantorMobile}</span>
+            <span className={styles.value}>
+              <Phone size={14} style={{ display: 'inline', marginRight: 4, color: 'var(--primary)' }} />
+              {member.guarantor_mobile || '-'}
+            </span>
+          </div>
+
+          {/* Jamindar Address / NID */}
+          <div className={styles.infoItem}>
+            <span className={styles.label}>{t.guarantorAddress}</span>
+            <span className={styles.value}>
+              <MapPin size={14} style={{ display: 'inline', marginRight: 4 }} />
+              {member.guarantor_address || '-'}
             </span>
           </div>
 

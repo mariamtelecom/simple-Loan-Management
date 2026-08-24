@@ -8,9 +8,13 @@ export interface Member {
   admission_date: string;    // ভর্তির তারিখ (e.g. "2024-06-20")
   total_installments: number;// কিস্তির সংখ্যা (e.g. 44)
   mobile: string;            // সদস্যের মোবাইল
+  address: string;           // সদস্যের ঠিকানা (Member Address)
   book_no: string;           // বই নং / পৃষ্ঠা (e.g. "১")
   guarantor_name: string;    // জামিনদারের নাম (Guarantor Name)
-  nid_number: string;        // NID কার্ড নম্বর (NID Card Number)
+  guarantor_mobile: string;  // জামিনদারের মোবাইল (Guarantor Mobile)
+  guarantor_address: string; // জামিনদারের ঠিকানা (Guarantor Address)
+  guarantor_nid: string;     // জামিনদারের NID নম্বর (Guarantor NID Number)
+  nid_number: string;        // সদস্যের NID কার্ড নম্বর (Member NID Number)
   photo_url?: string;        // সদস্যের ছবি (Person Image)
   nid_image_url?: string;    // এনআইডি কার্ডের ছবি (NID Card Image)
   status?: 'active' | 'closed';

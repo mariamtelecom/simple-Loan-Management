@@ -2,10 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, Plus, Search, Globe, Database } from 'lucide-react';
+import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck } from 'lucide-react';
 import styles from './Navbar.module.css';
 import { Language, translations } from '@/lib/i18n';
-import { isSupabaseConfigured } from '@/lib/supabaseClient';
+import { isPrimaryConfigured, isSecondaryConfigured } from '@/lib/supabaseClient';
+import { exportFullBackupJSON } from '@/lib/db';
 
 interface NavbarProps {
   lang: Language;
@@ -24,6 +25,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const t = translations[lang];
 
+  let dbBadgeLabel = t.dbModeLocal;
+  if (isPrimaryConfigured && isSecondaryConfigured) {
+    dbBadgeLabel = 'ডাবল Supabase Cloud DB + লোকাল ব্যাকআপ';
+  } else if (isPrimaryConfigured) {
+    dbBadgeLabel = t.dbModeSupabase;
+  }
+
   return (
     <header className={styles.navbar}>
       <div className="container">
@@ -41,12 +49,22 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Controls */}
           <div className={styles.rightGroup}>
-            {/* Supabase / Local Mode Indicator */}
-            <div className={styles.dbBadge}>
-              <Database size={12} />
+            {/* Multi-Cloud Dual Supabase Sync Status Badge */}
+            <div className={styles.dbBadge} title="Primary Supabase + Secondary Supabase + Local Backup">
+              <ShieldCheck size={13} style={{ color: 'var(--primary)' }} />
               <span className={styles.dbDot}></span>
-              <span>{isSupabaseConfigured ? t.dbModeSupabase : t.dbModeLocal}</span>
+              <span>{dbBadgeLabel}</span>
             </div>
+
+            {/* Export Backup JSON Button */}
+            <button
+              onClick={exportFullBackupJSON}
+              className="btn btn-secondary btn-sm"
+              title="ডাটাবেজ ব্যাকআপ ফাইল ডাউনলোড করুন (JSON Backup)"
+            >
+              <Download size={14} />
+              <span>ব্যাকআপ ফাইল</span>
+            </button>
 
             {/* Search Input if search handler provided */}
             {onSearchChange !== undefined && (

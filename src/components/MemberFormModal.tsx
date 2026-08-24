@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Upload, User, CreditCard, Trash2, Sparkles, CheckCircle } from 'lucide-react';
+import { X, Save, Upload, User, CreditCard, Trash2, Sparkles, CheckCircle, ShieldCheck } from 'lucide-react';
 import styles from './MemberFormModal.module.css';
 import { Member } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
@@ -34,8 +34,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     admission_date: new Date().toISOString().split('T')[0],
     total_installments: '44',
     mobile: '',
+    address: '',
     book_no: '',
     guarantor_name: '',
+    guarantor_mobile: '',
+    guarantor_address: '',
+    guarantor_nid: '',
     nid_number: '',
     photo_url: '',
     nid_image_url: ''
@@ -58,8 +62,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           admission_date: initialData.admission_date || new Date().toISOString().split('T')[0],
           total_installments: String(initialData.total_installments || 44),
           mobile: initialData.mobile || '',
+          address: initialData.address || '',
           book_no: initialData.book_no || '১',
           guarantor_name: initialData.guarantor_name || '',
+          guarantor_mobile: initialData.guarantor_mobile || '',
+          guarantor_address: initialData.guarantor_address || '',
+          guarantor_nid: initialData.guarantor_nid || '',
           nid_number: initialData.nid_number || '',
           photo_url: initialData.photo_url || '',
           nid_image_url: initialData.nid_image_url || ''
@@ -76,8 +84,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           admission_date: new Date().toISOString().split('T')[0],
           total_installments: '44',
           mobile: '',
+          address: '',
           book_no: auto.nextBookNo,
           guarantor_name: '',
+          guarantor_mobile: '',
+          guarantor_address: '',
+          guarantor_nid: '',
           nid_number: '',
           photo_url: '',
           nid_image_url: ''
@@ -92,14 +104,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Auto-compress image to ~200-250KB before storing in database
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldKey: 'photo_url' | 'nid_image_url') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setCompressingField(fieldKey);
     try {
-      // Compress image target size 250KB
       const compressedDataUrl = await compressImage(file, 250, 1000);
       setFormData((prev) => ({ ...prev, [fieldKey]: compressedDataUrl }));
     } catch (err) {
@@ -124,8 +134,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         admission_date: formData.admission_date,
         total_installments: Number(formData.total_installments || 44),
         mobile: formData.mobile,
+        address: formData.address,
         book_no: formData.book_no,
         guarantor_name: formData.guarantor_name,
+        guarantor_mobile: formData.guarantor_mobile,
+        guarantor_address: formData.guarantor_address,
+        guarantor_nid: formData.guarantor_nid,
         nid_number: formData.nid_number,
         photo_url: formData.photo_url,
         nid_image_url: formData.nid_image_url,
@@ -206,19 +220,6 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 />
               </div>
 
-              {/* Jamindar Name (Guarantor Name) - REQUIRED */}
-              <div className={`${styles.field} ${styles.fullWidth}`}>
-                <label className={styles.label}>{t.guarantorName} *</label>
-                <input
-                  type="text"
-                  required
-                  className={styles.input}
-                  placeholder="e.g. জামিনদারের নাম (মোঃ রফিকুল ইসলাম)"
-                  value={formData.guarantor_name}
-                  onChange={(e) => setFormData({ ...formData, guarantor_name: e.target.value })}
-                />
-              </div>
-
               {/* Member Mobile Number - REQUIRED */}
               <div className={styles.field}>
                 <label className={styles.label}>{t.mobile} *</label>
@@ -232,7 +233,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 />
               </div>
 
-              {/* NID Card Number */}
+              {/* Member NID Card Number */}
               <div className={styles.field}>
                 <label className={styles.label}>{t.nidNumber} *</label>
                 <input
@@ -245,7 +246,77 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 />
               </div>
 
-              {/* Person Photo Upload with Auto Compression (~200KB) */}
+              {/* Member Address */}
+              <div className={`${styles.field} ${styles.fullWidth}`}>
+                <label className={styles.label}>{t.memberAddress}</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="e.g. গ্রাম: রামপুর, ডাকঘর: বাজার রোড"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                />
+              </div>
+
+              {/* GUARANTOR SECTION HEADER */}
+              <div className={`${styles.fullWidth}`} style={{ marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '1px dashed #cbd5e1' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <ShieldCheck size={18} />
+                  <span>{t.guarantorSection}</span>
+                </h4>
+              </div>
+
+              {/* Jamindar Name (Guarantor Name) - REQUIRED */}
+              <div className={`${styles.field} ${styles.fullWidth}`}>
+                <label className={styles.label}>{t.guarantorName} *</label>
+                <input
+                  type="text"
+                  required
+                  className={styles.input}
+                  placeholder="e.g. জামিনদারের নাম (মোঃ রফিকুল ইসলাম)"
+                  value={formData.guarantor_name}
+                  onChange={(e) => setFormData({ ...formData, guarantor_name: e.target.value })}
+                />
+              </div>
+
+              {/* Jamindar Mobile */}
+              <div className={styles.field}>
+                <label className={styles.label}>{t.guarantorMobile} *</label>
+                <input
+                  type="tel"
+                  required
+                  className={styles.input}
+                  placeholder="01799887766"
+                  value={formData.guarantor_mobile}
+                  onChange={(e) => setFormData({ ...formData, guarantor_mobile: e.target.value })}
+                />
+              </div>
+
+              {/* Jamindar NID */}
+              <div className={styles.field}>
+                <label className={styles.label}>{t.guarantorNid}</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="e.g. 19852694152000999"
+                  value={formData.guarantor_nid}
+                  onChange={(e) => setFormData({ ...formData, guarantor_nid: e.target.value })}
+                />
+              </div>
+
+              {/* Jamindar Address */}
+              <div className={`${styles.field} ${styles.fullWidth}`}>
+                <label className={styles.label}>{t.guarantorAddress}</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="e.g. জামিনদারের ঠিকানা"
+                  value={formData.guarantor_address}
+                  onChange={(e) => setFormData({ ...formData, guarantor_address: e.target.value })}
+                />
+              </div>
+
+              {/* Person Photo Upload */}
               <div className={styles.field}>
                 <label className={styles.label}>{t.personPhoto}</label>
                 <div className={styles.uploadSection}>
@@ -273,7 +344,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     {formData.photo_url && (
                       <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>
                         <CheckCircle size={10} style={{ display: 'inline', marginRight: 2 }} />
-                        সাইজ: {getBase64SizeKB(formData.photo_url)} KB (কমপ্রেসড)
+                        সাইজ: {getBase64SizeKB(formData.photo_url)} KB
                       </span>
                     )}
                   </div>
@@ -291,7 +362,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 </div>
               </div>
 
-              {/* NID Card Image Upload with Auto Compression (~200KB) */}
+              {/* NID Card Image Upload */}
               <div className={styles.field}>
                 <label className={styles.label}>{t.nidImage}</label>
                 <div className={styles.uploadSection}>
@@ -319,7 +390,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     {formData.nid_image_url && (
                       <span style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>
                         <CheckCircle size={10} style={{ display: 'inline', marginRight: 2 }} />
-                        সাইজ: {getBase64SizeKB(formData.nid_image_url)} KB (কমপ্রেসড)
+                        সাইজ: {getBase64SizeKB(formData.nid_image_url)} KB
                       </span>
                     )}
                   </div>
