@@ -2,6 +2,7 @@ export interface Member {
   id: string;
   member_no: string;         // সদস্য নম্বর (e.g. "125" or "১২৫")
   name: string;              // নাম (e.g. "আনোয়ার হোসেন")
+  father_mother_spouse?: string; // পিতার নাম / মাতার নাম / স্ত্রী / স্বামীর নাম
   loan_amount: number;       // ঋণের পরিমাণ (e.g. 100000)
   savings_initial: number;   // সঞ্চয় জমা সহ (e.g. 20000)
   loan_purpose: string;      // ঋণের উদ্দেশ্য (e.g. "ব্যবসা")
@@ -11,6 +12,7 @@ export interface Member {
   address: string;           // সদস্যের ঠিকানা (Member Address)
   book_no: string;           // বই নং / পৃষ্ঠা (e.g. "১")
   guarantor_name: string;    // জামিনদারের নাম (Guarantor Name)
+  guarantor_father_mother_spouse?: string; // জামিনদারের পিতা / মাতা / স্ত্রী / স্বামীর নাম
   guarantor_mobile: string;  // জামিনদারের মোবাইল (Guarantor Mobile)
   guarantor_address: string; // জামিনদারের ঠিকানা (Guarantor Address)
   guarantor_nid: string;     // জামিনদারের NID নম্বর (Guarantor NID Number)

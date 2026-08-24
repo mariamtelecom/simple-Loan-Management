@@ -94,6 +94,14 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
             </span>
           </div>
 
+          {/* Member Father / Mother / Spouse Details */}
+          {member.father_mother_spouse && (
+            <div className={styles.infoItem}>
+              <span className={styles.label}>{t.fatherMotherSpouse}</span>
+              <span className={styles.value}>{member.father_mother_spouse}</span>
+            </div>
+          )}
+
           {/* Member Mobile */}
           <div className={styles.infoItem}>
             <span className={styles.label}>{t.mobile}</span>
@@ -129,6 +137,14 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
               {member.guarantor_name || '-'}
             </span>
           </div>
+
+          {/* Jamindar Father / Mother / Spouse */}
+          {member.guarantor_father_mother_spouse && (
+            <div className={styles.infoItem}>
+              <span className={styles.label}>{t.guarantorFatherMotherSpouse}</span>
+              <span className={styles.value}>{member.guarantor_father_mother_spouse}</span>
+            </div>
+          )}
 
           {/* Jamindar Mobile */}
           <div className={styles.infoItem}>

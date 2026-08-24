@@ -28,6 +28,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
   const [formData, setFormData] = useState({
     member_no: '',
     name: '',
+    father_mother_spouse: '',
     loan_amount: '',
     savings_initial: '',
     loan_purpose: '',
@@ -37,6 +38,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     address: '',
     book_no: '',
     guarantor_name: '',
+    guarantor_father_mother_spouse: '',
     guarantor_mobile: '',
     guarantor_address: '',
     guarantor_nid: '',
@@ -56,6 +58,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         setFormData({
           member_no: initialData.member_no || '',
           name: initialData.name || '',
+          father_mother_spouse: initialData.father_mother_spouse || '',
           loan_amount: String(initialData.loan_amount || ''),
           savings_initial: String(initialData.savings_initial || ''),
           loan_purpose: initialData.loan_purpose || '',
@@ -65,6 +68,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           address: initialData.address || '',
           book_no: initialData.book_no || '১',
           guarantor_name: initialData.guarantor_name || '',
+          guarantor_father_mother_spouse: initialData.guarantor_father_mother_spouse || '',
           guarantor_mobile: initialData.guarantor_mobile || '',
           guarantor_address: initialData.guarantor_address || '',
           guarantor_nid: initialData.guarantor_nid || '',
@@ -78,6 +82,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         setFormData({
           member_no: auto.nextMemberNo,
           name: '',
+          father_mother_spouse: '',
           loan_amount: '',
           savings_initial: '0',
           loan_purpose: '',
@@ -87,6 +92,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           address: '',
           book_no: auto.nextBookNo,
           guarantor_name: '',
+          guarantor_father_mother_spouse: '',
           guarantor_mobile: '',
           guarantor_address: '',
           guarantor_nid: '',
@@ -128,6 +134,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
       await onSave({
         member_no: formData.member_no,
         name: formData.name,
+        father_mother_spouse: formData.father_mother_spouse,
         loan_amount: Number(formData.loan_amount || 0),
         savings_initial: Number(formData.savings_initial || 0),
         loan_purpose: formData.loan_purpose,
@@ -137,6 +144,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         address: formData.address,
         book_no: formData.book_no,
         guarantor_name: formData.guarantor_name,
+        guarantor_father_mother_spouse: formData.guarantor_father_mother_spouse,
         guarantor_mobile: formData.guarantor_mobile,
         guarantor_address: formData.guarantor_address,
         guarantor_nid: formData.guarantor_nid,
@@ -220,6 +228,18 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 />
               </div>
 
+              {/* Borrower Father / Mother / Spouse Name - SINGLE INPUT FIELD */}
+              <div className={`${styles.field} ${styles.fullWidth}`}>
+                <label className={styles.label}>{t.fatherMotherSpouse}</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="e.g. পিতা/মাতা/স্ত্রী/স্বামীর নাম"
+                  value={formData.father_mother_spouse}
+                  onChange={(e) => setFormData({ ...formData, father_mother_spouse: e.target.value })}
+                />
+              </div>
+
               {/* Member Mobile Number - REQUIRED */}
               <div className={styles.field}>
                 <label className={styles.label}>{t.mobile} *</label>
@@ -276,6 +296,18 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   placeholder="e.g. জামিনদারের নাম (মোঃ রফিকুল ইসলাম)"
                   value={formData.guarantor_name}
                   onChange={(e) => setFormData({ ...formData, guarantor_name: e.target.value })}
+                />
+              </div>
+
+              {/* Jamindar Father / Mother / Spouse Name - SINGLE INPUT FIELD */}
+              <div className={`${styles.field} ${styles.fullWidth}`}>
+                <label className={styles.label}>{t.guarantorFatherMotherSpouse}</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  placeholder="e.g. জামিনদারের পিতা/মাতা/স্ত্রী/স্বামীর নাম"
+                  value={formData.guarantor_father_mother_spouse}
+                  onChange={(e) => setFormData({ ...formData, guarantor_father_mother_spouse: e.target.value })}
                 />
               </div>
 

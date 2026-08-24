@@ -70,7 +70,7 @@ export default function DashboardPage() {
     await loadData();
   };
 
-  // Filter members by member_no, name, mobile, nid_number, or guarantor_name
+  // Filter members by member_no, name, mobile, nid_number, relative name, or guarantor details
   const filteredMembers = members.filter((m) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
@@ -79,7 +79,9 @@ export default function DashboardPage() {
       m.member_no.toLowerCase().includes(q) ||
       m.mobile.toLowerCase().includes(q) ||
       (m.nid_number && m.nid_number.toLowerCase().includes(q)) ||
-      (m.guarantor_name && m.guarantor_name.toLowerCase().includes(q))
+      (m.father_mother_spouse && m.father_mother_spouse.toLowerCase().includes(q)) ||
+      (m.guarantor_name && m.guarantor_name.toLowerCase().includes(q)) ||
+      (m.guarantor_father_mother_spouse && m.guarantor_father_mother_spouse.toLowerCase().includes(q))
     );
   });
 

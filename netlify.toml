@@ -4,3 +4,9 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[[plugins]]
+  package = "netlify-plugin-html-validate"
+  [plugins.inputs]
+    path = ".next/server/app"
+    ext = "html"

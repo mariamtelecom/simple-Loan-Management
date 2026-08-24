@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     member_no VARCHAR(50) UNIQUE NOT NULL,      -- সদস্য নম্বর (e.g., 125)
     name VARCHAR(255) NOT NULL,                 -- নাম (e.g., আনোয়ার হোসেন)
+    father_mother_spouse VARCHAR(255) DEFAULT '', -- পিতার নাম / মাতার নাম / স্ত্রী / স্বামীর নাম
     loan_amount NUMERIC(12, 2) NOT NULL DEFAULT 0, -- ঋণের পরিমাণ (e.g., 100000)
     savings_initial NUMERIC(12, 2) NOT NULL DEFAULT 0, -- প্রাথমিক সঞ্চয় জমা সহ
     loan_purpose VARCHAR(255) DEFAULT '',       -- ঋণের উদ্দেশ্য
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS public.members (
     address TEXT DEFAULT '',                    -- সদস্যের ঠিকানা (Member Address)
     book_no VARCHAR(50) DEFAULT '1',            -- বই নং / পৃষ্ঠা
     guarantor_name VARCHAR(255) NOT NULL DEFAULT '', -- জামিনদারের নাম (Guarantor Name)
+    guarantor_father_mother_spouse VARCHAR(255) DEFAULT '', -- জামিনদারের পিতা / মাতা / স্ত্রী / স্বামীর নাম
     guarantor_mobile VARCHAR(30) DEFAULT '',    -- জামিনদারের মোবাইল (Guarantor Mobile)
     guarantor_address TEXT DEFAULT '',         -- জামিনদারের ঠিকানা (Guarantor Address)
     guarantor_nid VARCHAR(50) DEFAULT '',       -- জামিনদারের NID নম্বর (Guarantor NID)
@@ -30,6 +32,10 @@ CREATE TABLE IF NOT EXISTS public.members (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- SQL Migration snippet for existing Supabase databases:
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_mother_spouse VARCHAR(255) DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_father_mother_spouse VARCHAR(255) DEFAULT '';
 
 -- Index for fast member lookup
 CREATE INDEX IF NOT EXISTS idx_members_member_no ON public.members(member_no);
