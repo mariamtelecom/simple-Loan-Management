@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.members (
     nid_image_url TEXT DEFAULT '',              -- Legacy NID image fallback
     guarantor_nid_front_url TEXT DEFAULT '',    -- জামিনদারের NID সামনের অংশ (Guarantor NID Front)
     guarantor_nid_back_url TEXT DEFAULT '',     -- জামিনদারের NID পেছনের অংশ (Guarantor NID Rear/Back)
+    drive_folder_url TEXT DEFAULT '',           -- Google Drive ফোল্ডার লিঙ্ক (Google Drive Folder URL)
     status VARCHAR(20) DEFAULT 'active',        -- active, closed
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -44,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.members (
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS nid_back_url TEXT DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_nid_front_url TEXT DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_nid_back_url TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS drive_folder_url TEXT DEFAULT '';
 
 -- Index for fast member lookup
 CREATE INDEX IF NOT EXISTS idx_members_member_no ON public.members(member_no);

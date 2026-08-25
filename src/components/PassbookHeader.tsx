@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin } from 'lucide-react';
+import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin, Folder } from 'lucide-react';
 import styles from './PassbookHeader.module.css';
 import { Member } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
@@ -56,6 +56,21 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
           </div>
 
           <div className={`${styles.actionsGroup} no-print`}>
+            {/* Google Drive Folder Link */}
+            {member.drive_folder_url && (
+              <a
+                href={member.drive_folder_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary btn-sm"
+                title="গুগল ড্রাইভে সদস্যের সকল মূল ছবি ও ডকুমেন্টের ফোল্ডার খুলুন"
+                style={{ borderColor: 'rgba(66, 133, 244, 0.4)', color: 'var(--text-main)' }}
+              >
+                <Folder size={15} style={{ color: '#4285F4' }} />
+                <span>ড্রাইভ ফোল্ডার</span>
+              </a>
+            )}
+
             {/* View Member NID */}
             {hasMemberNid && (
               <button

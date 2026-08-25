@@ -13,7 +13,9 @@ import {
   ShieldCheck, 
   Camera, 
   FileText,
-  DollarSign
+  DollarSign,
+  Folder,
+  CloudUpload
 } from 'lucide-react';
 import styles from './MemberFormModal.module.css';
 import { Member } from '@/lib/types';
@@ -21,6 +23,7 @@ import { Language, translations } from '@/lib/i18n';
 import { getNextAutoMemberAndBookNo } from '@/lib/db';
 import { compressImage, getBase64SizeKB } from '@/lib/imageCompressor';
 import { CameraCaptureModal } from './CameraCaptureModal';
+import { uploadMemberImagesToDrive, ImageUploadItem } from '@/lib/googleDrive';
 
 type DocFieldKey = 
   | 'photo_url' 
@@ -69,10 +72,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     nid_back_url: '',
     nid_image_url: '',
     guarantor_nid_front_url: '',
-    guarantor_nid_back_url: ''
+    guarantor_nid_back_url: '',
+    drive_folder_url: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [uploadStatusMsg, setUploadStatusMsg] = useState('');
   const [compressingField, setCompressingField] = useState<string | null>(null);
   const [isAutoAssigned, setIsAutoAssigned] = useState(false);
 
@@ -114,7 +119,8 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           nid_back_url: initialData.nid_back_url || '',
           nid_image_url: initialData.nid_image_url || initialData.nid_front_url || '',
           guarantor_nid_front_url: initialData.guarantor_nid_front_url || '',
-          guarantor_nid_back_url: initialData.guarantor_nid_back_url || ''
+          guarantor_nid_back_url: initialData.guarantor_nid_back_url || '',
+          drive_folder_url: initialData.drive_folder_url || ''
         });
       } else {
         setIsAutoAssigned(true);
@@ -142,7 +148,8 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           nid_back_url: '',
           nid_image_url: '',
           guarantor_nid_front_url: '',
-          guarantor_nid_back_url: ''
+          guarantor_nid_back_url: '',
+          drive_folder_url: ''
         });
       }
     }
@@ -207,7 +214,34 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     if (!formData.name || !formData.mobile || !formData.guarantor_name) return;
 
     setSubmitting(true);
+    setUploadStatusMsg('গুগল ড্রাইভে ফোল্ডার তৈরি ও ছবি আপলোড হচ্ছে...');
+
     try {
+      // 1. Gather all base64 data URLs to upload to Google Drive
+      const imageItems: ImageUploadItem[] = [
+        { key: 'photo_url', base64: formData.photo_url },
+        { key: 'nid_front_url', base64: formData.nid_front_url || formData.nid_image_url },
+        { key: 'nid_back_url', base64: formData.nid_back_url },
+        { key: 'guarantor_nid_front_url', base64: formData.guarantor_nid_front_url },
+        { key: 'guarantor_nid_back_url', base64: formData.guarantor_nid_back_url }
+      ];
+
+      // Upload base64 images to Google Drive
+      const driveResult = await uploadMemberImagesToDrive(
+        formData.member_no,
+        formData.name,
+        imageItems
+      );
+
+      const finalPhotoUrl = driveResult.urls.photo_url || formData.photo_url;
+      const finalNidFrontUrl = driveResult.urls.nid_front_url || formData.nid_front_url || formData.nid_image_url;
+      const finalNidBackUrl = driveResult.urls.nid_back_url || formData.nid_back_url;
+      const finalGuarantorNidFrontUrl = driveResult.urls.guarantor_nid_front_url || formData.guarantor_nid_front_url;
+      const finalGuarantorNidBackUrl = driveResult.urls.guarantor_nid_back_url || formData.guarantor_nid_back_url;
+      const finalDriveFolderUrl = driveResult.folder_url || formData.drive_folder_url;
+
+      setUploadStatusMsg('সদস্যের তথ্য সংরক্ষণ করা হচ্ছে...');
+
       await onSave({
         member_no: formData.member_no,
         name: formData.name,
@@ -226,12 +260,13 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         guarantor_address: formData.guarantor_address,
         guarantor_nid: formData.guarantor_nid,
         nid_number: formData.nid_number,
-        photo_url: formData.photo_url,
-        nid_front_url: formData.nid_front_url || formData.nid_image_url,
-        nid_back_url: formData.nid_back_url,
-        nid_image_url: formData.nid_image_url || formData.nid_front_url,
-        guarantor_nid_front_url: formData.guarantor_nid_front_url,
-        guarantor_nid_back_url: formData.guarantor_nid_back_url,
+        photo_url: finalPhotoUrl,
+        nid_front_url: finalNidFrontUrl,
+        nid_back_url: finalNidBackUrl,
+        nid_image_url: finalNidFrontUrl,
+        guarantor_nid_front_url: finalGuarantorNidFrontUrl,
+        guarantor_nid_back_url: finalGuarantorNidBackUrl,
+        drive_folder_url: finalDriveFolderUrl,
         status: 'active'
       });
       onClose();
@@ -239,6 +274,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
       console.error('Failed saving member', err);
     } finally {
       setSubmitting(false);
+      setUploadStatusMsg('');
     }
   };
 
@@ -601,6 +637,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             </div>
 
             <div className={styles.footer}>
+              {submitting && uploadStatusMsg && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, marginRight: 'auto' }}>
+                  <CloudUpload size={16} className="animate-spin" />
+                  <span>{uploadStatusMsg}</span>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={onClose}
@@ -615,7 +657,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 disabled={submitting || compressingField !== null}
               >
                 <Save size={16} />
-                <span>{submitting ? '...' : t.save}</span>
+                <span>{submitting ? 'সংরক্ষণ করা হচ্ছে...' : t.save}</span>
               </button>
             </div>
           </form>

@@ -23,6 +23,7 @@ export interface Member {
   nid_image_url?: string;    // Legacy fallback NID image
   guarantor_nid_front_url?: string; // জামিনদারের NID কার্ডের সামনের অংশ (Guarantor NID Front)
   guarantor_nid_back_url?: string;  // জামিনদারের NID কার্ডের পেছনের অংশ (Guarantor NID Back)
+  drive_folder_url?: string;        // Google Drive ফোল্ডার লিঙ্ক (Google Drive Folder URL)
   status?: 'active' | 'closed';
   created_at?: string;
   updated_at?: string;
