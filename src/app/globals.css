@@ -82,6 +82,8 @@ button {
 
 input, select, textarea {
   font-family: inherit;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 /* Scrollbar */
@@ -121,6 +123,9 @@ input, select, textarea {
   .main-content {
     padding-top: 4.5rem;
     padding-bottom: 2rem;
+  }
+  .main-content.hasSearch {
+    padding-top: 7.25rem;
   }
 }
 

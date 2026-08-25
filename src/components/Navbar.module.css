@@ -134,23 +134,31 @@
   background: var(--bg-card-hover);
 }
 
+.mobileSearchRow {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .navbar {
-    height: 3.75rem;
+    height: auto;
+    padding: 0.6rem 0;
+  }
+  .navbar.hasSearch {
+    padding-bottom: 0.65rem;
   }
   .inner {
     gap: 0.5rem;
   }
   .brand {
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
   .logoIcon {
     width: 2.1rem;
     height: 2.1rem;
   }
   .brandTitle {
-    font-size: 0.9rem;
-    max-width: 150px;
+    font-size: 0.875rem;
+    max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -158,32 +166,59 @@
   .brandSubtitle, .dbBadge {
     display: none;
   }
+  .desktopSearch {
+    display: none !important;
+  }
   .rightGroup {
     gap: 0.35rem;
   }
-  .searchInput {
-    width: 110px;
-    padding-left: 1.85rem;
-    font-size: 0.775rem;
-  }
-  .searchInput:focus {
-    width: 130px;
-  }
   .langBtn {
-    padding: 0.35rem 0.5rem;
+    padding: 0.35rem 0.55rem;
     font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .btnLabel {
+    display: none;
+  }
+
+  /* 2-Row Layout: Search bar on row 2 for mobile */
+  .mobileSearchRow {
+    display: flex;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  .searchBoxMobile {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .searchIconMobile {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .searchInputMobile {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.85rem 0.5rem 2.25rem;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .searchInputMobile:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
   }
 }
 
 @media (max-width: 480px) {
   .brandTitle {
-    max-width: 120px;
-  }
-  .searchInput {
-    width: 90px;
-    padding-right: 0.4rem;
-  }
-  .searchInput:focus {
-    width: 110px;
+    max-width: 110px;
   }
 }
+

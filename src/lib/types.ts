@@ -18,7 +18,11 @@ export interface Member {
   guarantor_nid: string;     // জামিনদারের NID নম্বর (Guarantor NID Number)
   nid_number: string;        // সদস্যের NID কার্ড নম্বর (Member NID Number)
   photo_url?: string;        // সদস্যের ছবি (Person Image)
-  nid_image_url?: string;    // এনআইডি কার্ডের ছবি (NID Card Image)
+  nid_front_url?: string;    // সদস্যের NID কার্ডের সামনের অংশ (NID Card Front Image)
+  nid_back_url?: string;     // সদস্যের NID কার্ডের পেছনের অংশ (NID Card Back Image)
+  nid_image_url?: string;    // Legacy fallback NID image
+  guarantor_nid_front_url?: string; // জামিনদারের NID কার্ডের সামনের অংশ (Guarantor NID Front)
+  guarantor_nid_back_url?: string;  // জামিনদারের NID কার্ডের পেছনের অংশ (Guarantor NID Back)
   status?: 'active' | 'closed';
   created_at?: string;
   updated_at?: string;

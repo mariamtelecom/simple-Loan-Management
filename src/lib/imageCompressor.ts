@@ -63,6 +63,54 @@ export async function compressImage(
 }
 
 /**
+ * Compress raw Data URL (e.g. from WebCam Canvas capture)
+ */
+export async function compressDataUrl(
+  dataUrl: string,
+  maxKB: number = 250,
+  maxDimension: number = 1000
+): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(dataUrl);
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      let quality = 0.85;
+      let compressed = canvas.toDataURL('image/jpeg', quality);
+
+      while (compressed.length * 0.75 > maxKB * 1024 && quality > 0.3) {
+        quality -= 0.1;
+        compressed = canvas.toDataURL('image/jpeg', quality);
+      }
+
+      resolve(compressed);
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/**
  * Calculates human-readable KB size of a Base64 Data URL string
  */
 export function getBase64SizeKB(dataUrl: string): number {

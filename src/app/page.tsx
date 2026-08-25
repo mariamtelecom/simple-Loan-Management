@@ -107,7 +107,7 @@ export default function DashboardPage() {
         onSearchChange={setSearchQuery}
       />
 
-      <main className="main-content">
+      <main className="main-content hasSearch">
         <div className="container">
           {/* Hero Header */}
           <div className={styles.dashboardHeader}>

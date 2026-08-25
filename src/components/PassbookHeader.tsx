@@ -20,7 +20,12 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   onPrint
 }) => {
   const t = translations[lang];
-  const [showNidModal, setShowNidModal] = useState(false);
+  
+  // NID Modal View state: 'member' | 'guarantor' | null
+  const [nidViewType, setNidViewType] = useState<'member' | 'guarantor' | null>(null);
+
+  const hasMemberNid = !!(member.nid_front_url || member.nid_back_url || member.nid_image_url);
+  const hasGuarantorNid = !!(member.guarantor_nid_front_url || member.guarantor_nid_back_url);
 
   return (
     <>
@@ -51,14 +56,27 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
           </div>
 
           <div className={`${styles.actionsGroup} no-print`}>
-            {member.nid_image_url && (
+            {/* View Member NID */}
+            {hasMemberNid && (
               <button
-                onClick={() => setShowNidModal(true)}
+                onClick={() => setNidViewType('member')}
                 className="btn btn-secondary btn-sm"
-                title={t.viewNid}
+                title="সদস্যের NID কার্ড দেখুন (Front & Back)"
               >
                 <CreditCard size={15} />
-                <span>{t.viewNid}</span>
+                <span>সদস্য NID</span>
+              </button>
+            )}
+
+            {/* View Guarantor NID */}
+            {hasGuarantorNid && (
+              <button
+                onClick={() => setNidViewType('guarantor')}
+                className="btn btn-secondary btn-sm"
+                title="জামিনদারের NID কার্ড দেখুন (Front & Back)"
+              >
+                <ShieldCheck size={15} style={{ color: 'var(--primary)' }} />
+                <span>জামিনদার NID</span>
               </button>
             )}
 
@@ -187,19 +205,76 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
         </div>
       </div>
 
-      {/* NID Viewer Modal */}
-      {showNidModal && member.nid_image_url && (
-        <div className={styles.nidModalOverlay} onClick={() => setShowNidModal(false)}>
+      {/* NID Viewer Modal (Member or Guarantor NID Cards - Front & Rear) */}
+      {nidViewType !== null && (
+        <div className={styles.nidModalOverlay} onClick={() => setNidViewType(null)}>
           <div className={styles.nidModalContent} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>
-                {t.nidImage} - {member.name} ({member.nid_number || ''})
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <CreditCard size={18} style={{ color: 'var(--primary)' }} />
+                <span>
+                  {nidViewType === 'member'
+                    ? `সদস্যের NID কার্ড - ${member.name} (${member.nid_number || ''})`
+                    : `জামিনদারের NID কার্ড - ${member.guarantor_name} (${member.guarantor_nid || ''})`}
+                </span>
               </h3>
-              <button onClick={() => setShowNidModal(false)} className="btn btn-secondary btn-sm">
+              <button onClick={() => setNidViewType(null)} className="btn btn-secondary btn-sm">
                 <X size={18} />
               </button>
             </div>
-            <img src={member.nid_image_url} alt="NID Card" className={styles.nidImageFull} />
+
+            {/* Display Front & Rear Part Cards */}
+            <div className={styles.nidGrid}>
+              {/* Front Part Image */}
+              <div className={styles.nidCardBox}>
+                <span className={styles.nidCardLabel}>
+                  <CreditCard size={14} />
+                  <span>সামনের অংশ (Front Part)</span>
+                </span>
+                {nidViewType === 'member' ? (
+                  (member.nid_front_url || member.nid_image_url) ? (
+                    <img src={member.nid_front_url || member.nid_image_url} alt="NID Front" className={styles.nidImageFull} />
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                      সামনের অংশের ছবি যুক্ত করা হয়নি
+                    </div>
+                  )
+                ) : (
+                  member.guarantor_nid_front_url ? (
+                    <img src={member.guarantor_nid_front_url} alt="Guarantor NID Front" className={styles.nidImageFull} />
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                      সামনের অংশের ছবি যুক্ত করা হয়নি
+                    </div>
+                  )
+                )}
+              </div>
+
+              {/* Rear / Back Part Image */}
+              <div className={styles.nidCardBox}>
+                <span className={styles.nidCardLabel}>
+                  <CreditCard size={14} />
+                  <span>পেছনের অংশ (Rear/Back Part)</span>
+                </span>
+                {nidViewType === 'member' ? (
+                  member.nid_back_url ? (
+                    <img src={member.nid_back_url} alt="NID Back" className={styles.nidImageFull} />
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                      পেছনের অংশের ছবি যুক্ত করা হয়নি
+                    </div>
+                  )
+                ) : (
+                  member.guarantor_nid_back_url ? (
+                    <img src={member.guarantor_nid_back_url} alt="Guarantor NID Back" className={styles.nidImageFull} />
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                      পেছনের অংশের ছবি যুক্ত করা হয়নি
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

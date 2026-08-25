@@ -356,7 +356,11 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
     guarantor_nid: newMember.guarantor_nid || '',
     nid_number: newMember.nid_number || '',
     photo_url: newMember.photo_url || '',
-    nid_image_url: newMember.nid_image_url || '',
+    nid_front_url: newMember.nid_front_url || newMember.nid_image_url || '',
+    nid_back_url: newMember.nid_back_url || '',
+    nid_image_url: newMember.nid_image_url || newMember.nid_front_url || '',
+    guarantor_nid_front_url: newMember.guarantor_nid_front_url || '',
+    guarantor_nid_back_url: newMember.guarantor_nid_back_url || '',
     status: 'active'
   };
 

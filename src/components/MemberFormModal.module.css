@@ -91,6 +91,9 @@
   padding: 0.65rem 0.85rem;
   color: var(--text-primary);
   font-size: 0.9rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   transition: border-color 0.2s ease;
 }
 
@@ -105,45 +108,63 @@
   background: #f8fafc;
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 0.85rem;
+  padding: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 .previewThumb {
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: var(--radius-sm);
   object-fit: cover;
   border: 1px solid var(--border-color);
   background: #ffffff;
+  flex-shrink: 0;
 }
 
 .avatarFallback {
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: var(--radius-sm);
   background: #e2e8f0;
   color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.uploadActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-grow: 1;
+}
+
+.btnGroupRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .fileInputLabel {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.85rem;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
   border-radius: var(--radius-sm);
   background: #ffffff;
   border: 1px solid var(--border-color);
-  font-size: 0.8rem;
+  font-size: 0.775rem;
   font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .fileInputLabel:hover {
@@ -151,8 +172,45 @@
   color: var(--primary);
 }
 
+.cameraBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #047857;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cameraBtn:hover {
+  background: var(--primary);
+  color: #ffffff;
+}
+
 .hiddenFileInput {
   display: none;
+}
+
+.sectionDivider {
+  grid-column: span 2;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .footer {

@@ -33,7 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   }
 
   return (
-    <header className={styles.navbar}>
+    <header className={`${styles.navbar} ${onSearchChange !== undefined ? styles.hasSearch : ''}`}>
       <div className="container">
         <div className={styles.inner}>
           {/* Left Brand */}
@@ -56,19 +56,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>{dbBadgeLabel}</span>
             </div>
 
-            {/* Export Backup JSON Button */}
-            <button
-              onClick={exportFullBackupJSON}
-              className="btn btn-secondary btn-sm"
-              title="ডাটাবেজ ব্যাকআপ ফাইল ডাউনলোড করুন (JSON Backup)"
-            >
-              <Download size={14} />
-              <span>ব্যাকআপ ফাইল</span>
-            </button>
-
-            {/* Search Input if search handler provided */}
+            {/* Desktop Search Input */}
             {onSearchChange !== undefined && (
-              <div className={styles.searchBox}>
+              <div className={`${styles.searchBox} ${styles.desktopSearch}`}>
                 <Search size={15} className={styles.searchIcon} />
                 <input
                   type="text"
@@ -79,6 +69,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                 />
               </div>
             )}
+
+            {/* Export Backup JSON Button */}
+            <button
+              onClick={exportFullBackupJSON}
+              className="btn btn-secondary btn-sm"
+              title="ডাটাবেজ ব্যাকআপ ফাইল ডাউনলোড করুন (JSON Backup)"
+            >
+              <Download size={14} />
+              <span className={styles.btnLabel}>ব্যাকআপ ফাইল</span>
+            </button>
 
             {/* Language Toggle */}
             <button
@@ -97,11 +97,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="btn btn-primary btn-sm"
               >
                 <Plus size={16} />
-                <span>{t.addMember}</span>
+                <span className={styles.btnLabel}>{t.addMember}</span>
               </button>
             )}
           </div>
         </div>
+
+        {/* Mobile Search Row (Row 2 on mobile view when search is enabled) */}
+        {onSearchChange !== undefined && (
+          <div className={styles.mobileSearchRow}>
+            <div className={styles.searchBoxMobile}>
+              <Search size={16} className={styles.searchIconMobile} />
+              <input
+                type="text"
+                className={styles.searchInputMobile}
+                placeholder={t.searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

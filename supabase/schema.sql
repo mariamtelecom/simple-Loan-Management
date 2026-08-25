@@ -27,7 +27,11 @@ CREATE TABLE IF NOT EXISTS public.members (
     guarantor_nid VARCHAR(50) DEFAULT '',       -- জামিনদারের NID নম্বর (Guarantor NID)
     nid_number VARCHAR(50) NOT NULL DEFAULT '', -- সদস্যের NID কার্ড নম্বর (Member NID)
     photo_url TEXT DEFAULT '',                  -- সদস্যের ছবি (Person Image Data URL/Link)
-    nid_image_url TEXT DEFAULT '',              -- NID কার্ডের ছবি (NID Card Data URL/Link)
+    nid_front_url TEXT DEFAULT '',              -- NID কার্ডের সামনের অংশ (NID Card Front)
+    nid_back_url TEXT DEFAULT '',               -- NID কার্ডের পেছনের অংশ (NID Card Rear/Back)
+    nid_image_url TEXT DEFAULT '',              -- Legacy NID image fallback
+    guarantor_nid_front_url TEXT DEFAULT '',    -- জামিনদারের NID সামনের অংশ (Guarantor NID Front)
+    guarantor_nid_back_url TEXT DEFAULT '',     -- জামিনদারের NID পেছনের অংশ (Guarantor NID Rear/Back)
     status VARCHAR(20) DEFAULT 'active',        -- active, closed
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -36,6 +40,10 @@ CREATE TABLE IF NOT EXISTS public.members (
 -- SQL Migration snippet for existing Supabase databases:
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_mother_spouse VARCHAR(255) DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_father_mother_spouse VARCHAR(255) DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS nid_front_url TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS nid_back_url TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_nid_front_url TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_nid_back_url TEXT DEFAULT '';
 
 -- Index for fast member lookup
 CREATE INDEX IF NOT EXISTS idx_members_member_no ON public.members(member_no);
