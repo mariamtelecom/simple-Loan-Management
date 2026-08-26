@@ -1,11 +1,11 @@
 /**
- * Utility to compress and resize image files to ~200KB - 300KB target size
- * before saving to PostgreSQL / Supabase / LocalStorage database.
+ * Utility to resize & optimize image files up to ~500KB - 2000KB (2MB) target size
+ * for high-resolution document and photo storage on Google Drive.
  */
 export async function compressImage(
   file: File,
-  maxKB: number = 250,
-  maxDimension: number = 1000
+  maxKB: number = 2000,
+  maxDimension: number = 2400
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -40,13 +40,13 @@ export async function compressImage(
         // Draw image onto canvas
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Iteratively lower JPEG quality until payload size <= maxKB
-        let quality = 0.85;
+        // High quality initial JPEG export (0.92 quality)
+        let quality = 0.92;
         let dataUrl = canvas.toDataURL('image/jpeg', quality);
 
-        // Calculate size in KB (approx: string length * (3/4) / 1024)
-        while (dataUrl.length * 0.75 > maxKB * 1024 && quality > 0.3) {
-          quality -= 0.1;
+        // Iteratively adjust JPEG quality until size <= maxKB
+        while (dataUrl.length * 0.75 > maxKB * 1024 && quality > 0.4) {
+          quality -= 0.05;
           dataUrl = canvas.toDataURL('image/jpeg', quality);
         }
 
@@ -67,8 +67,8 @@ export async function compressImage(
  */
 export async function compressDataUrl(
   dataUrl: string,
-  maxKB: number = 250,
-  maxDimension: number = 1000
+  maxKB: number = 2000,
+  maxDimension: number = 2400
 ): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();

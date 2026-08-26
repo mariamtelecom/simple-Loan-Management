@@ -110,7 +110,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
     if (!capturedUrl) return;
     setCompressing(true);
     try {
-      const compressed = await compressDataUrl(capturedUrl, 250, 1000);
+      const compressed = await compressDataUrl(capturedUrl, 2000, 2400);
       onCapture(compressed);
       handleClose();
     } catch (err) {

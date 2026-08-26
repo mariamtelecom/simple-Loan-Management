@@ -168,7 +168,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
     setCompressingField(fieldKey);
     try {
-      const compressedDataUrl = await compressImage(file, 250, 1000);
+      const compressedDataUrl = await compressImage(file, 2000, 2400);
       setFormData((prev) => ({
         ...prev,
         [fieldKey]: compressedDataUrl,
