@@ -3,7 +3,7 @@
 -- Updated with Member Photo, NID Card Image, NID Number, Member Address & Full Guarantor Details
 -- ========================================================
 
--- Enable UUID extension if not enabled
+-- Enable UUID extension if not enabled SAJJAD JIM
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. MEMBERS TABLE (সদস্য টেবিল)
