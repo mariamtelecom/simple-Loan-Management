@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck, LogOut, Trash2 } from 'lucide-react';
 import styles from './Navbar.module.css';
 import { Language, translations } from '@/lib/i18n';
-import { isPrimaryConfigured, isSecondaryConfigured } from '@/lib/supabaseClient';
+import { isPrimaryConfigured } from '@/lib/supabaseClient';
 import { exportFullBackupJSON } from '@/lib/db';
 import { useAuth } from '@/context/AuthContext';
 
@@ -29,12 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const t = translations[lang];
   const { requestLogoutConfirmation } = useAuth();
 
-  let dbBadgeLabel = t.dbModeLocal;
-  if (isPrimaryConfigured && isSecondaryConfigured) {
-    dbBadgeLabel = t.dbModeDualSupabase;
-  } else if (isPrimaryConfigured) {
-    dbBadgeLabel = t.dbModeSupabase;
-  }
+  const dbBadgeLabel = isPrimaryConfigured ? t.dbModeSupabase : t.dbModeLocal;
 
   return (
     <header className={`${styles.navbar} ${onSearchChange !== undefined ? styles.hasSearch : ''}`}>
@@ -53,8 +48,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Controls */}
           <div className={styles.rightGroup}>
-            {/* Multi-Cloud Dual Supabase Sync Status Badge */}
-            <div className={styles.dbBadge} title="Primary Supabase + Secondary Supabase + Local Backup">
+            {/* Supabase Sync Status Badge */}
+            <div className={styles.dbBadge} title="Supabase Cloud DB + Local Backup">
               <ShieldCheck size={13} style={{ color: 'var(--primary)' }} />
               <span className={styles.dbDot}></span>
               <span>{dbBadgeLabel}</span>

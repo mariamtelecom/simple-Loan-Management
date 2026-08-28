@@ -100,8 +100,8 @@ export const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
                 </h4>
                 <p className={styles.warningText}>
                   {isBn
-                    ? 'এই সদস্যকে মুছে ফেললে তার নাম, এনআইডি, ছবি, জামিনদারের তথ্য এবং পাসবই লেজারের সমস্ত লেনদেনের রেকর্ড Primary Supabase DB, Secondary Cloud DB এবং LocalStorage থেকে চিরতরে মুছে যাবে।'
-                    : 'Deleting this member will permanently erase their profile, NID images, guarantor info, and all passbook ledger transaction history from both Cloud Databases & local storage.'}
+                    ? 'এই সদস্যকে মুছে ফেললে তার নাম, এনআইডি, ছবি, জামিনদারের তথ্য এবং পাসবই লেজারের সমস্ত লেনদেনের রেকর্ড Supabase DB এবং LocalStorage থেকে চিরতরে মুছে যাবে।'
+                    : 'Deleting this member will permanently erase their profile, NID images, guarantor info, and all passbook ledger transaction history from Supabase Cloud DB & local storage.'}
                 </p>
               </div>
 

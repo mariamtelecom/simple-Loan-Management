@@ -109,6 +109,8 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
 
   const handleCreateNewLoan = async (loanData: Omit<Loan, 'id' | 'created_at'>, initialSavings: number) => {
     const newL = await createLoan(loanData, initialSavings);
+    setIsNewLoanModalOpen(false);
+    await loadMemberData();
     router.push(`/members/${memberId}/loans/${newL.id}`);
   };
 

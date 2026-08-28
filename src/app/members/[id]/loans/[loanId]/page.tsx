@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Edit, Trash2, Printer, AlertTriangle } from 'lucide-react';
 import styles from '../../member.module.css';
 import { Navbar } from '@/components/Navbar';
@@ -37,6 +37,7 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
   const resolvedParams = use(params);
   const memberId = resolvedParams.id;
   const loanId = resolvedParams.loanId;
+  const router = useRouter();
   
   const [lang, setLang] = useState<Language>('bn');
   const t = translations[lang];
@@ -112,9 +113,9 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
 
   const handleCreateNewLoan = async (loanData: Omit<Loan, 'id' | 'created_at'>, initialSavings: number) => {
     const newL = await createLoan(loanData, initialSavings);
-    if (typeof window !== 'undefined') {
-      window.location.href = `/members/${memberId}/loans/${newL.id}`;
-    }
+    setIsNewLoanModalOpen(false);
+    await loadData();
+    router.push(`/members/${memberId}/loans/${newL.id}`);
   };
 
   const handleConfirmDeleteMember = async (id: string) => {
@@ -132,9 +133,7 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
   };
 
   const handleSelectLoan = (selectedLoanId: string) => {
-    if (typeof window !== 'undefined') {
-      window.location.href = `/members/${memberId}/loans/${selectedLoanId}`;
-    }
+    router.push(`/members/${memberId}/loans/${selectedLoanId}`);
   };
 
   if (loading) {
