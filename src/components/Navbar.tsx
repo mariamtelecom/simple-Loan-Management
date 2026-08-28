@@ -84,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className={styles.btnLabel}>ব্যাকআপ ফাইল</span>
             </button>
 
-            {/* Delete All Data Button */}
+            {/* Delete All Data Button (Hidden - uncomment if needed later)
             {onOpenDeleteAllModal && (
               <button
                 onClick={onOpenDeleteAllModal}
@@ -95,6 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className={styles.btnLabel}>{lang === 'bn' ? 'সকল তথ্য মুছুন' : 'Delete All Data'}</span>
               </button>
             )}
+            */}
 
             {/* Language Toggle */}
             <button

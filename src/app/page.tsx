@@ -128,7 +128,7 @@ export default function DashboardPage() {
         lang={lang}
         onToggleLang={() => setLang((l) => (l === 'bn' ? 'en' : 'bn'))}
         onOpenAddMemberModal={() => setIsAddModalOpen(true)}
-        onOpenDeleteAllModal={() => setIsDeleteAllModalOpen(true)}
+        /* onOpenDeleteAllModal={() => setIsDeleteAllModalOpen(true)} */
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
