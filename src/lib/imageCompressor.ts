@@ -44,10 +44,22 @@ export async function compressImage(
         let quality = 0.92;
         let dataUrl = canvas.toDataURL('image/jpeg', quality);
 
-        // Iteratively adjust JPEG quality until size <= maxKB
-        while (dataUrl.length * 0.75 > maxKB * 1024 && quality > 0.4) {
+        // Iteratively adjust JPEG quality and dimensions until size <= maxKB
+        while (dataUrl.length * 0.75 > maxKB * 1024 && quality > 0.3) {
           quality -= 0.05;
           dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        // If quality reduced to minimum and still exceeds maxKB, resize dimensions
+        if (dataUrl.length * 0.75 > maxKB * 1024) {
+          const scaledCanvas = document.createElement('canvas');
+          scaledCanvas.width = Math.round(width * 0.75);
+          scaledCanvas.height = Math.round(height * 0.75);
+          const scaledCtx = scaledCanvas.getContext('2d');
+          if (scaledCtx) {
+            scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+            dataUrl = scaledCanvas.toDataURL('image/jpeg', 0.75);
+          }
         }
 
         resolve(dataUrl);
@@ -99,8 +111,19 @@ export async function compressDataUrl(
       let compressed = canvas.toDataURL('image/jpeg', quality);
 
       while (compressed.length * 0.75 > maxKB * 1024 && quality > 0.3) {
-        quality -= 0.1;
+        quality -= 0.05;
         compressed = canvas.toDataURL('image/jpeg', quality);
+      }
+
+      if (compressed.length * 0.75 > maxKB * 1024) {
+        const scaledCanvas = document.createElement('canvas');
+        scaledCanvas.width = Math.round(width * 0.75);
+        scaledCanvas.height = Math.round(height * 0.75);
+        const scaledCtx = scaledCanvas.getContext('2d');
+        if (scaledCtx) {
+          scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+          compressed = scaledCanvas.toDataURL('image/jpeg', 0.75);
+        }
       }
 
       resolve(compressed);

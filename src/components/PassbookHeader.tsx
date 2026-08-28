@@ -25,7 +25,7 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   const [nidViewType, setNidViewType] = useState<'member' | 'guarantor' | null>(null);
 
   const hasMemberNid = !!(member.nid_front_url || member.nid_back_url || member.nid_image_url);
-  const hasGuarantorNid = !!(member.guarantor_nid_front_url || member.guarantor_nid_back_url);
+  const hasGuarantorNid = !!(member.guarantor_nid_front_url || member.guarantor_nid_back_url || member.guarantor_photo_url);
 
   return (
     <>
@@ -238,8 +238,19 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
               </button>
             </div>
 
-            {/* Display Front & Rear Part Cards */}
+            {/* Display Front & Rear Part Cards & Guarantor Photo */}
             <div className={styles.nidGrid}>
+              {/* Guarantor Photo if present */}
+              {nidViewType === 'guarantor' && member.guarantor_photo_url && (
+                <div className={styles.nidCardBox} style={{ gridColumn: 'span 2' }}>
+                  <span className={styles.nidCardLabel}>
+                    <User size={14} />
+                    <span>জামিনদারের ছবি (Guarantor Photo)</span>
+                  </span>
+                  <img src={member.guarantor_photo_url} alt="Guarantor Photo" className={styles.nidImageFull} style={{ maxHeight: '220px', objectFit: 'contain' }} />
+                </div>
+              )}
+
               {/* Front Part Image */}
               <div className={styles.nidCardBox}>
                 <span className={styles.nidCardLabel}>

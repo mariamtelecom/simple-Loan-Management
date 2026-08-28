@@ -22,6 +22,7 @@ import { Navbar } from '@/components/Navbar';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { SuccessModal } from '@/components/SuccessModal';
 import { DeleteMemberModal } from '@/components/DeleteMemberModal';
+import { DeleteSuccessModal } from '@/components/DeleteSuccessModal';
 import { Member } from '@/lib/types';
 import { getMembers, createMember, deleteMember, getCalculatedLedger, getDashboardStats } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [createdSuccessMember, setCreatedSuccessMember] = useState<Member | null>(null);
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
+  const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
 
   const [stats, setStats] = useState({
     totalGranted: 0,
@@ -77,9 +79,13 @@ export default function DashboardPage() {
   };
 
   const handleConfirmDeleteDashboardMember = async (id: string) => {
+    const targetMember = members.find((m) => m.id === id);
+    const name = targetMember?.name || '';
+    const memberNo = targetMember?.member_no || '';
     await deleteMember(id);
     await loadData();
     setDeletingMember(null);
+    setDeletedSuccessInfo({ name, memberNo });
   };
 
   // Filter members by member_no, name, mobile, nid_number, relative name, or guarantor details
@@ -310,6 +316,15 @@ export default function DashboardPage() {
         member={deletingMember}
         onClose={() => setDeletingMember(null)}
         onConfirmDelete={handleConfirmDeleteDashboardMember}
+        lang={lang}
+      />
+
+      {/* Member Delete Success Confirmation Modal */}
+      <DeleteSuccessModal
+        isOpen={deletedSuccessInfo !== null}
+        memberName={deletedSuccessInfo?.name || ''}
+        memberNo={deletedSuccessInfo?.memberNo}
+        onClose={() => setDeletedSuccessInfo(null)}
         lang={lang}
       />
     </>

@@ -12,6 +12,8 @@ import { LedgerTable } from '@/components/LedgerTable';
 import { TransactionModal } from '@/components/TransactionModal';
 import { MemberFormModal } from '@/components/MemberFormModal';
 import { DeleteMemberModal } from '@/components/DeleteMemberModal';
+import { SuccessModal } from '@/components/SuccessModal';
+import { DeleteSuccessModal } from '@/components/DeleteSuccessModal';
 import { Member, LedgerRowCalculation, FinancialSummary, Transaction } from '@/lib/types';
 import { 
   getMemberById, 
@@ -48,6 +50,8 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [updatedSuccessMember, setUpdatedSuccessMember] = useState<Member | null>(null);
+  const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadMemberData = async () => {
@@ -80,13 +84,19 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
 
   const handleUpdateMember = async (updatedData: Omit<Member, 'id' | 'created_at'>) => {
     if (!member) return;
-    await updateMember(member.id, updatedData);
+    const updated = await updateMember(member.id, updatedData);
     await loadMemberData();
+    if (updated) {
+      setUpdatedSuccessMember(updated);
+    }
   };
 
   const handleConfirmDeleteMember = async (id: string) => {
+    const name = member?.name || '';
+    const memberNo = member?.member_no || '';
     await deleteMember(id);
-    router.push('/');
+    setIsDeleteModalOpen(false);
+    setDeletedSuccessInfo({ name, memberNo });
   };
 
   const handlePrint = () => {
@@ -219,6 +229,27 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
         member={member}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirmDelete={handleConfirmDeleteMember}
+        lang={lang}
+      />
+
+      {/* Member Update Success Confirmation Modal */}
+      <SuccessModal
+        isOpen={updatedSuccessMember !== null}
+        member={updatedSuccessMember}
+        onClose={() => setUpdatedSuccessMember(null)}
+        lang={lang}
+        mode="update"
+      />
+
+      {/* Member Delete Success Confirmation Modal */}
+      <DeleteSuccessModal
+        isOpen={deletedSuccessInfo !== null}
+        memberName={deletedSuccessInfo?.name || ''}
+        memberNo={deletedSuccessInfo?.memberNo}
+        onClose={() => {
+          setDeletedSuccessInfo(null);
+          router.push('/');
+        }}
         lang={lang}
       />
     </>

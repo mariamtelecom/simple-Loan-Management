@@ -2,11 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck } from 'lucide-react';
+import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck, LogOut } from 'lucide-react';
 import styles from './Navbar.module.css';
 import { Language, translations } from '@/lib/i18n';
 import { isPrimaryConfigured, isSecondaryConfigured } from '@/lib/supabaseClient';
 import { exportFullBackupJSON } from '@/lib/db';
+import { useAuth } from '@/context/AuthContext';
 
 interface NavbarProps {
   lang: Language;
@@ -24,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange
 }) => {
   const t = translations[lang];
+  const { requestLogoutConfirmation } = useAuth();
 
   let dbBadgeLabel = t.dbModeLocal;
   if (isPrimaryConfigured && isSecondaryConfigured) {
@@ -100,6 +102,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className={styles.btnLabel}>{t.addMember}</span>
               </button>
             )}
+
+            {/* Firebase Logout */}
+            <button
+              onClick={requestLogoutConfirmation}
+              className="btn btn-secondary btn-sm"
+              title="লগআউট করুন (Logout)"
+              style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+            >
+              <LogOut size={14} />
+              <span className={styles.btnLabel}>লগআউট</span>
+            </button>
           </div>
         </div>
 

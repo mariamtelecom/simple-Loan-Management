@@ -361,6 +361,8 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
     nid_image_url: newMember.nid_image_url || newMember.nid_front_url || '',
     guarantor_nid_front_url: newMember.guarantor_nid_front_url || '',
     guarantor_nid_back_url: newMember.guarantor_nid_back_url || '',
+    guarantor_photo_url: newMember.guarantor_photo_url || '',
+    drive_folder_url: newMember.drive_folder_url || '',
     status: 'active'
   };
 

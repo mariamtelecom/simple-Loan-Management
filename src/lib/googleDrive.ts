@@ -4,7 +4,7 @@
  */
 
 export interface ImageUploadItem {
-  key: 'photo_url' | 'nid_front_url' | 'nid_back_url' | 'guarantor_nid_front_url' | 'guarantor_nid_back_url';
+  key: 'photo_url' | 'nid_front_url' | 'nid_back_url' | 'guarantor_photo_url' | 'guarantor_nid_front_url' | 'guarantor_nid_back_url';
   base64: string;
   fileName?: string;
 }
@@ -15,6 +15,7 @@ export interface GoogleDriveUploadResult {
     photo_url?: string;
     nid_front_url?: string;
     nid_back_url?: string;
+    guarantor_photo_url?: string;
     guarantor_nid_front_url?: string;
     guarantor_nid_back_url?: string;
   };

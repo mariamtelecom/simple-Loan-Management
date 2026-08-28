@@ -21,7 +21,7 @@ import styles from './MemberFormModal.module.css';
 import { Member } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
 import { getNextAutoMemberAndBookNo } from '@/lib/db';
-import { compressImage, getBase64SizeKB } from '@/lib/imageCompressor';
+import { compressImage, compressDataUrl, getBase64SizeKB } from '@/lib/imageCompressor';
 import { CameraCaptureModal } from './CameraCaptureModal';
 import { uploadMemberImagesToDrive, ImageUploadItem } from '@/lib/googleDrive';
 
@@ -29,6 +29,7 @@ type DocFieldKey =
   | 'photo_url' 
   | 'nid_front_url' 
   | 'nid_back_url' 
+  | 'guarantor_photo_url'
   | 'guarantor_nid_front_url' 
   | 'guarantor_nid_back_url';
 
@@ -71,6 +72,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     nid_front_url: '',
     nid_back_url: '',
     nid_image_url: '',
+    guarantor_photo_url: '',
     guarantor_nid_front_url: '',
     guarantor_nid_back_url: '',
     drive_folder_url: ''
@@ -118,6 +120,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           nid_front_url: initialData.nid_front_url || initialData.nid_image_url || '',
           nid_back_url: initialData.nid_back_url || '',
           nid_image_url: initialData.nid_image_url || initialData.nid_front_url || '',
+          guarantor_photo_url: initialData.guarantor_photo_url || '',
           guarantor_nid_front_url: initialData.guarantor_nid_front_url || '',
           guarantor_nid_back_url: initialData.guarantor_nid_back_url || '',
           drive_folder_url: initialData.drive_folder_url || ''
@@ -147,6 +150,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           nid_front_url: '',
           nid_back_url: '',
           nid_image_url: '',
+          guarantor_photo_url: '',
           guarantor_nid_front_url: '',
           guarantor_nid_back_url: '',
           drive_folder_url: ''
@@ -168,7 +172,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
     setCompressingField(fieldKey);
     try {
-      const compressedDataUrl = await compressImage(file, 2000, 2400);
+      // Member photo is compressed to 100-180KB (150KB target max, 800px) for direct database storage
+      const isMemberPhoto = fieldKey === 'photo_url';
+      const maxKB = isMemberPhoto ? 150 : 2000;
+      const maxDimension = isMemberPhoto ? 800 : 2400;
+
+      const compressedDataUrl = await compressImage(file, maxKB, maxDimension);
       setFormData((prev) => ({
         ...prev,
         [fieldKey]: compressedDataUrl,
@@ -182,14 +191,19 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
   };
 
   // Instant Camera capture complete
-  const handleCameraCapture = (compressedDataUrl: string) => {
+  const handleCameraCapture = async (compressedDataUrl: string) => {
     if (!cameraModalConfig.fieldKey) return;
     const fieldKey = cameraModalConfig.fieldKey;
 
+    let finalDataUrl = compressedDataUrl;
+    if (fieldKey === 'photo_url') {
+      finalDataUrl = await compressDataUrl(compressedDataUrl, 150, 800);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [fieldKey]: compressedDataUrl,
-      ...(fieldKey === 'nid_front_url' ? { nid_image_url: compressedDataUrl } : {})
+      [fieldKey]: finalDataUrl,
+      ...(fieldKey === 'nid_front_url' ? { nid_image_url: finalDataUrl } : {})
     }));
   };
 
@@ -222,6 +236,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         { key: 'photo_url', base64: formData.photo_url },
         { key: 'nid_front_url', base64: formData.nid_front_url || formData.nid_image_url },
         { key: 'nid_back_url', base64: formData.nid_back_url },
+        { key: 'guarantor_photo_url', base64: formData.guarantor_photo_url },
         { key: 'guarantor_nid_front_url', base64: formData.guarantor_nid_front_url },
         { key: 'guarantor_nid_back_url', base64: formData.guarantor_nid_back_url }
       ];
@@ -233,9 +248,11 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         imageItems
       );
 
-      const finalPhotoUrl = driveResult.urls.photo_url || formData.photo_url;
+      // Member photo is kept as compressed Base64 data URL (100-180 KB) directly in database for instant web display
+      const finalPhotoUrl = formData.photo_url;
       const finalNidFrontUrl = driveResult.urls.nid_front_url || formData.nid_front_url || formData.nid_image_url;
       const finalNidBackUrl = driveResult.urls.nid_back_url || formData.nid_back_url;
+      const finalGuarantorPhotoUrl = driveResult.urls.guarantor_photo_url || formData.guarantor_photo_url;
       const finalGuarantorNidFrontUrl = driveResult.urls.guarantor_nid_front_url || formData.guarantor_nid_front_url;
       const finalGuarantorNidBackUrl = driveResult.urls.guarantor_nid_back_url || formData.guarantor_nid_back_url;
       const finalDriveFolderUrl = driveResult.folder_url || formData.drive_folder_url;
@@ -264,6 +281,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         nid_front_url: finalNidFrontUrl,
         nid_back_url: finalNidBackUrl,
         nid_image_url: finalNidFrontUrl,
+        guarantor_photo_url: finalGuarantorPhotoUrl,
         guarantor_nid_front_url: finalGuarantorNidFrontUrl,
         guarantor_nid_back_url: finalGuarantorNidBackUrl,
         drive_folder_url: finalDriveFolderUrl,
@@ -558,10 +576,15 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   />
                 </div>
 
-                {/* 4. Guarantor NID Front */}
+                {/* 4. Guarantor Photo */}
+                <div className={styles.fullWidth}>
+                  {renderUploadBox('জামিনদারের ছবি', 'guarantor_photo_url', formData.guarantor_photo_url, 'user')}
+                </div>
+
+                {/* 5. Guarantor NID Front */}
                 {renderUploadBox('জামিনদারের NID কার্ড (সামনের অংশ)', 'guarantor_nid_front_url', formData.guarantor_nid_front_url, 'card')}
 
-                {/* 5. Guarantor NID Rear/Back */}
+                {/* 6. Guarantor NID Rear/Back */}
                 {renderUploadBox('জামিনদারের NID কার্ড (পেছনের অংশ)', 'guarantor_nid_back_url', formData.guarantor_nid_back_url, 'card')}
 
                 {/* SECTION 4: LOAN & SAVINGS INFO */}
