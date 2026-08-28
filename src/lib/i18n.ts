@@ -75,6 +75,7 @@ export const translations = {
     collectorName: "আদায়কারীর নাম/স্বাক্ষর",
     notes: "মন্তব্য (ঐচ্ছিক)",
     confirmDelete: "আপনি কি নিশ্চিত যে এই সদস্যকে মুছে ফেলতে চান?",
+    dbModeDualSupabase: "Supabase DB + Local",
     dbModeSupabase: "Supabase PostgreSQL মোড সক্রিয়",
     dbModeLocal: "লোকাল স্টোরেজ (ডেমো) মোড সক্রিয়",
     
@@ -165,6 +166,7 @@ export const translations = {
     collectorName: "Collector Name / Signature",
     notes: "Notes (Optional)",
     confirmDelete: "Are you sure you want to delete this member?",
+    dbModeDualSupabase: "Dual Supabase Cloud DB + Local Backup",
     dbModeSupabase: "Supabase PostgreSQL Active",
     dbModeLocal: "Local Preview Mode Active",
 

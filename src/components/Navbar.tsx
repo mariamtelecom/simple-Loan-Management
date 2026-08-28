@@ -31,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   let dbBadgeLabel = t.dbModeLocal;
   if (isPrimaryConfigured && isSecondaryConfigured) {
-    dbBadgeLabel = 'ডাবল Supabase Cloud DB + লোকাল ব্যাকআপ';
+    dbBadgeLabel = t.dbModeDualSupabase;
   } else if (isPrimaryConfigured) {
     dbBadgeLabel = t.dbModeSupabase;
   }
