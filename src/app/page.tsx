@@ -23,8 +23,9 @@ import { MemberFormModal } from '@/components/MemberFormModal';
 import { SuccessModal } from '@/components/SuccessModal';
 import { DeleteMemberModal } from '@/components/DeleteMemberModal';
 import { DeleteSuccessModal } from '@/components/DeleteSuccessModal';
+import { DeleteAllDataModal } from '@/components/DeleteAllDataModal';
 import { Member } from '@/lib/types';
-import { getMembers, createMember, deleteMember, getCalculatedLedger, getDashboardStats } from '@/lib/db';
+import { getMembers, createMember, deleteMember, deleteAllData, getCalculatedLedger, getDashboardStats } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 
 export default function DashboardPage() {
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
   const [createdSuccessMember, setCreatedSuccessMember] = useState<Member | null>(null);
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
   const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
@@ -88,6 +90,12 @@ export default function DashboardPage() {
     setDeletedSuccessInfo({ name, memberNo });
   };
 
+  const handleConfirmDeleteAll = async () => {
+    await deleteAllData();
+    await loadData();
+    setIsDeleteAllModalOpen(false);
+  };
+
   // Filter members by member_no, name, mobile, nid_number, relative name, or guarantor details
   const filteredMembers = members.filter((m) => {
     const q = searchQuery.toLowerCase().trim();
@@ -109,6 +117,7 @@ export default function DashboardPage() {
         lang={lang}
         onToggleLang={() => setLang((l) => (l === 'bn' ? 'en' : 'bn'))}
         onOpenAddMemberModal={() => setIsAddModalOpen(true)}
+        onOpenDeleteAllModal={() => setIsDeleteAllModalOpen(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -325,6 +334,14 @@ export default function DashboardPage() {
         memberName={deletedSuccessInfo?.name || ''}
         memberNo={deletedSuccessInfo?.memberNo}
         onClose={() => setDeletedSuccessInfo(null)}
+        lang={lang}
+      />
+
+      {/* 2-Step Verification Delete All Data Modal */}
+      <DeleteAllDataModal
+        isOpen={isDeleteAllModalOpen}
+        onClose={() => setIsDeleteAllModalOpen(false)}
+        onConfirmDeleteAll={handleConfirmDeleteAll}
         lang={lang}
       />
     </>

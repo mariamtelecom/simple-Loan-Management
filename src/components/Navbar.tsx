@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck, LogOut } from 'lucide-react';
+import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck, LogOut, Trash2 } from 'lucide-react';
 import styles from './Navbar.module.css';
 import { Language, translations } from '@/lib/i18n';
 import { isPrimaryConfigured, isSecondaryConfigured } from '@/lib/supabaseClient';
@@ -13,6 +13,7 @@ interface NavbarProps {
   lang: Language;
   onToggleLang: () => void;
   onOpenAddMemberModal?: () => void;
+  onOpenDeleteAllModal?: () => void;
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
 }
@@ -21,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   lang,
   onToggleLang,
   onOpenAddMemberModal,
+  onOpenDeleteAllModal,
   searchQuery = '',
   onSearchChange
 }) => {
@@ -81,6 +83,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Download size={14} />
               <span className={styles.btnLabel}>ব্যাকআপ ফাইল</span>
             </button>
+
+            {/* Delete All Data Button */}
+            {onOpenDeleteAllModal && (
+              <button
+                onClick={onOpenDeleteAllModal}
+                className="btn btn-danger btn-sm"
+                title="সকল ডেমো ও বর্তমান তথ্য ডিলিট করুন (Clear All Data)"
+              >
+                <Trash2 size={14} />
+                <span className={styles.btnLabel}>{lang === 'bn' ? 'সকল তথ্য মুছুন' : 'Delete All Data'}</span>
+              </button>
+            )}
 
             {/* Language Toggle */}
             <button

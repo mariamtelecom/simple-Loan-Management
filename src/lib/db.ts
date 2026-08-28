@@ -677,3 +677,49 @@ export async function exportFullBackupJSON() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/**
+ * DELETE ALL DATA: Purge all members and transactions from Primary Supabase Cloud DB, Secondary Supabase Cloud DB, and Local Storage Backup.
+ */
+export async function deleteAllData(): Promise<boolean> {
+  // 1. Delete all transactions and members from Primary Supabase DB
+  if (isPrimaryConfigured && supabasePrimary) {
+    try {
+      await supabasePrimary.from('transactions').delete().neq('id', '');
+      await supabasePrimary.from('members').delete().neq('id', '');
+    } catch (e) {
+      console.warn('Primary Supabase wipe failed', e);
+    }
+  }
+
+  // 2. Delete all transactions and members from Secondary Supabase DB
+  if (isSecondaryConfigured && supabaseSecondary) {
+    try {
+      await supabaseSecondary.from('transactions').delete().neq('id', '');
+      await supabaseSecondary.from('members').delete().neq('id', '');
+    } catch (e) {
+      console.warn('Secondary Supabase wipe failed', e);
+    }
+  }
+
+  // 3. Purge Local Storage Backup
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_MEMBERS_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_TRANSACTIONS_KEY);
+      localStorage.removeItem('loan_mgmt_members_v1');
+      localStorage.removeItem('loan_mgmt_members_v2');
+      localStorage.removeItem('loan_mgmt_members_v3');
+      localStorage.removeItem('loan_mgmt_transactions_v1');
+      localStorage.removeItem('loan_mgmt_transactions_v2');
+      localStorage.removeItem('loan_mgmt_transactions_v3');
+      localStorage.setItem(LOCAL_STORAGE_MEMBERS_KEY, JSON.stringify([]));
+      localStorage.setItem(LOCAL_STORAGE_TRANSACTIONS_KEY, JSON.stringify([]));
+    } catch (e) {
+      console.warn('LocalStorage clear failed', e);
+    }
+  }
+
+  return true;
+}
+
