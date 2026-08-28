@@ -377,6 +377,24 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
           newMember = { ...newMember, ...fbData };
         }
       }
+
+      // Automatically create Loan 1 in Supabase loans table
+      if (isUuid(newMember.id)) {
+        try {
+          const initialLoanPayload = {
+            member_id: newMember.id,
+            loan_no: 1,
+            loan_amount: Number(newMember.loan_amount || 0),
+            loan_purpose: newMember.loan_purpose || 'সাধারণ ঋণ',
+            total_installments: Number(newMember.total_installments || 44),
+            admission_date: newMember.admission_date || new Date().toISOString().split('T')[0],
+            status: 'active'
+          };
+          await supabasePrimary.from('loans').insert([initialLoanPayload]);
+        } catch (loanErr) {
+          console.warn('Initial Supabase loan insert error:', loanErr);
+        }
+      }
     } catch (e) {
       console.warn('Primary Supabase write failed', e);
     }
@@ -587,7 +605,44 @@ export async function getLoansForMember(memberId: string): Promise<Loan[]> {
 
 export async function getLoanById(memberId: string, loanId: string): Promise<Loan | null> {
   const loans = await getLoansForMember(memberId);
-  return loans.find(l => l.id === loanId || l.id === memberId || (loanId === 'default' && l.loan_no === 1)) || loans[0] || null;
+  if (!loanId || loanId === 'default') {
+    return loans[0] || null;
+  }
+  const matched = loans.find(l => 
+    l.id === loanId || 
+    String(l.loan_no) === String(loanId) ||
+    (loanId === memberId && l.loan_no === 1)
+  );
+  return matched || loans[0] || null;
+}
+
+export async function updateLoanStatus(memberId: string, loanId: string, status: 'active' | 'closed'): Promise<Loan | null> {
+  const loans = await getLoansForMember(memberId);
+  const targetLoan = loans.find(l => l.id === loanId || String(l.loan_no) === String(loanId));
+  if (!targetLoan) return null;
+
+  const updatedLoan: Loan = {
+    ...targetLoan,
+    status,
+    updated_at: new Date().toISOString()
+  };
+
+  // 1. Update Primary Supabase DB
+  if (isPrimaryConfigured && supabasePrimary && isUuid(targetLoan.id)) {
+    try {
+      await supabasePrimary
+        .from('loans')
+        .update({ status, updated_at: updatedLoan.updated_at })
+        .eq('id', targetLoan.id);
+    } catch (e) {
+      console.warn('Primary Supabase loan status update warning', e);
+    }
+  }
+
+  // 2. Update Local Storage Backup
+  saveLoanToLocalBackup(updatedLoan);
+
+  return updatedLoan;
 }
 
 
@@ -605,8 +660,16 @@ export async function createLoan(
     created_at: new Date().toISOString()
   };
 
+  let dbMemberId = loanData.member_id;
+  if (!isUuid(dbMemberId)) {
+    const member = await getMemberById(loanData.member_id);
+    if (member && isUuid(member.id)) {
+      dbMemberId = member.id;
+    }
+  }
+
   const payload = {
-    member_id: newLoan.member_id,
+    member_id: dbMemberId,
     loan_no: newLoan.loan_no,
     loan_amount: Number(newLoan.loan_amount),
     loan_purpose: newLoan.loan_purpose,
@@ -615,11 +678,13 @@ export async function createLoan(
     status: 'active'
   };
 
-  if (isPrimaryConfigured && supabasePrimary) {
+  if (isPrimaryConfigured && supabasePrimary && isUuid(dbMemberId)) {
     try {
       const { data, error } = await supabasePrimary.from('loans').insert([payload]).select().single();
       if (!error && data) {
         newLoan = data as Loan;
+      } else if (error) {
+        console.warn('Primary Supabase loan insert error:', error.message);
       }
     } catch (e) {
       console.warn('Primary Supabase loan insert warning', e);
@@ -656,7 +721,11 @@ export async function getCalculatedLedgerForLoan(member: Member, loan: Loan): Pr
   // Filter transactions for this specific loan
   const loanTxs = allTxs.filter((t) => {
     if (t.loan_id) {
-      return t.loan_id === loan.id;
+      return (
+        t.loan_id === loan.id ||
+        (t.loan_id === member.id && loan.loan_no === 1) ||
+        String(t.loan_id) === String(loan.loan_no)
+      );
     }
     // Legacy transactions without loan_id map to Loan 1
     return loan.loan_no === 1 || loan.id === member.id;
@@ -758,16 +827,57 @@ export async function getCalculatedLedger(member: Member): Promise<{
  * ADD TRANSACTION: Parallel Write to Primary Supabase + Secondary Supabase + Local Storage Backup!
  */
 export async function addTransaction(transaction: Omit<Transaction, 'id' | 'created_at'>): Promise<Transaction> {
+  // 1. Resolve valid member UUID if member_id is a local identifier (e.g. 'm-123')
+  let dbMemberId = transaction.member_id;
+  if (!isUuid(dbMemberId)) {
+    const member = await getMemberById(transaction.member_id);
+    if (member && isUuid(member.id)) {
+      dbMemberId = member.id;
+    }
+  }
+
+  // 2. Resolve valid loan ID (support local IDs, loan_no, and Supabase UUIDs)
+  let dbLoanId: string | null = null;
+  let localLoanId: string | undefined = transaction.loan_id;
+
+  if (transaction.loan_id) {
+    const targetLoan = await getLoanById(transaction.member_id, transaction.loan_id);
+    if (targetLoan) {
+      localLoanId = targetLoan.id;
+      if (isUuid(targetLoan.id)) {
+        dbLoanId = targetLoan.id;
+      }
+    } else if (isUuid(transaction.loan_id)) {
+      dbLoanId = transaction.loan_id;
+    }
+  }
+
   let newTx: Transaction = {
     ...transaction,
+    loan_id: localLoanId,
     id: 't-' + Date.now(),
     created_at: new Date().toISOString()
   };
 
+  // 3. Format date to standard ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ssZ) for PostgreSQL compatibility
+  let cleanDate = transaction.date;
+  if (cleanDate) {
+    const dtParsed = new Date(cleanDate);
+    if (!isNaN(dtParsed.getTime())) {
+      cleanDate = dtParsed.toISOString().split('T')[0];
+    } else {
+      const match = cleanDate.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (match) cleanDate = match[1];
+    }
+  }
+  if (!cleanDate) {
+    cleanDate = new Date().toISOString().split('T')[0];
+  }
+
   const txPayload = {
-    member_id: transaction.member_id,
-    loan_id: transaction.loan_id || null,
-    date: transaction.date,
+    member_id: dbMemberId,
+    loan_id: dbLoanId,
+    date: cleanDate,
     savings_deposit: Number(transaction.savings_deposit || 0),
     savings_withdraw: Number(transaction.savings_withdraw || 0),
     installment_no: transaction.installment_no ? Number(transaction.installment_no) : null,
@@ -776,8 +886,8 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
     notes: transaction.notes || ''
   };
 
-  // 1. Write to Primary Supabase DB
-  if (isPrimaryConfigured && supabasePrimary) {
+  // 4. Write to Primary Supabase DB
+  if (isPrimaryConfigured && supabasePrimary && isUuid(dbMemberId)) {
     try {
       const { data, error } = await supabasePrimary
         .from('transactions')
@@ -786,13 +896,28 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
         .single();
       if (!error && data) {
         newTx = data as Transaction;
+      } else if (error) {
+        console.warn('Primary Supabase transaction insert failed:', error.message);
+        // Fallback retry: If loan_id column or foreign key fails, retry without loan_id
+        const fallbackPayload = { ...txPayload };
+        delete (fallbackPayload as Record<string, unknown>).loan_id;
+        const { data: fbData, error: fbError } = await supabasePrimary
+          .from('transactions')
+          .insert([fallbackPayload])
+          .select()
+          .single();
+        if (!fbError && fbData) {
+          newTx = fbData as Transaction;
+        } else if (fbError) {
+          console.error('Supabase transaction fallback insert error:', fbError.message);
+        }
       }
     } catch (e) {
-      console.warn('Primary Supabase transaction insert failed', e);
+      console.warn('Primary Supabase transaction insert exception:', e);
     }
   }
 
-  // 2. Parallel Write to Local Storage Backup
+  // 5. Parallel Write to Local Storage Backup
   saveTransactionToLocalBackup(newTx);
 
   return newTx;

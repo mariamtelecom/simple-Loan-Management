@@ -56,6 +56,7 @@ CREATE INDEX IF NOT EXISTS idx_members_member_no ON public.members(member_no);
 CREATE TABLE IF NOT EXISTS public.transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     member_id UUID NOT NULL REFERENCES public.members(id) ON DELETE CASCADE,
+    loan_id UUID REFERENCES public.loans(id) ON DELETE CASCADE,
     date DATE NOT NULL DEFAULT CURRENT_DATE,    -- তারিখ
     savings_deposit NUMERIC(12, 2) NOT NULL DEFAULT 0,  -- জমা
     savings_withdraw NUMERIC(12, 2) NOT NULL DEFAULT 0, -- উত্তোলন
@@ -65,6 +66,9 @@ CREATE TABLE IF NOT EXISTS public.transactions (
     notes TEXT DEFAULT '',                      -- মন্তব্য / নোট
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration for existing Supabase databases:
+-- ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS loan_id UUID REFERENCES public.loans(id) ON DELETE CASCADE;
 
 -- Index for ordering transactions per member
 CREATE INDEX IF NOT EXISTS idx_transactions_member_date ON public.transactions(member_id, date ASC, created_at ASC);

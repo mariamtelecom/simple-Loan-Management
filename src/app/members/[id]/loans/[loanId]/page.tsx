@@ -25,7 +25,8 @@ import {
   deleteTransaction, 
   updateMember, 
   createLoan,
-  deleteMember 
+  deleteMember,
+  updateLoanStatus
 } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 
@@ -62,15 +63,16 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
   const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (targetLoanId?: string, isInitial: boolean = false) => {
+    if (isInitial) setLoading(true);
     const m = await getMemberById(memberId);
     if (m) {
       setMember(m);
       const memberLoans = await getLoansForMember(m.id);
       setLoans(memberLoans);
 
-      const targetLoan = await getLoanById(m.id, loanId);
+      const desiredId = targetLoanId || loanId || activeLoan?.id || 'default';
+      const targetLoan = await getLoanById(m.id, desiredId);
       const currentL = targetLoan || memberLoans[0] || null;
       setActiveLoan(currentL);
 
@@ -80,32 +82,45 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
         setFinancialSummary(summary);
       }
     }
-    setLoading(false);
+    if (isInitial) setLoading(false);
   };
 
   useEffect(() => {
-    loadData();
+    loadData(undefined, true);
   }, [memberId, loanId]);
+
+  const handleSelectLoan = async (selectedLoanId: string) => {
+    const selectedLoan = loans.find(l => l.id === selectedLoanId || String(l.loan_no) === String(selectedLoanId));
+    if (selectedLoan && member) {
+      setActiveLoan(selectedLoan);
+      const { rows, summary } = await getCalculatedLedgerForLoan(member, selectedLoan);
+      setLedgerRows(rows);
+      setFinancialSummary(summary);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', `/members/${memberId}/loans/${selectedLoan.id}`);
+      }
+    }
+  };
 
   const handleAddTx = async (txData: Omit<Transaction, 'id' | 'created_at'>) => {
     await addTransaction({
       ...txData,
       loan_id: activeLoan?.id
     });
-    await loadData();
+    await loadData(activeLoan?.id);
   };
 
   const handleDeleteTx = async (txId: string) => {
     if (confirm('আপনি কি নিশ্চিত যে এই লেনদেনটি মুছে ফেলতে চান?')) {
       await deleteTransaction(txId);
-      await loadData();
+      await loadData(activeLoan?.id);
     }
   };
 
   const handleUpdateMember = async (updatedData: Omit<Member, 'id' | 'created_at'>) => {
     if (!member) return;
     const updated = await updateMember(member.id, updatedData);
-    await loadData();
+    await loadData(activeLoan?.id);
     if (updated) {
       setUpdatedSuccessMember(updated);
     }
@@ -114,8 +129,16 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
   const handleCreateNewLoan = async (loanData: Omit<Loan, 'id' | 'created_at'>, initialSavings: number) => {
     const newL = await createLoan(loanData, initialSavings);
     setIsNewLoanModalOpen(false);
-    await loadData();
-    router.push(`/members/${memberId}/loans/${newL.id}`);
+    await loadData(newL.id);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', `/members/${memberId}/loans/${newL.id}`);
+    }
+  };
+
+  const handleToggleLoanStatus = async (lId: string, currentStatus?: 'active' | 'closed') => {
+    const nextStatus = currentStatus === 'closed' ? 'active' : 'closed';
+    await updateLoanStatus(memberId, lId, nextStatus);
+    await loadData(lId);
   };
 
   const handleConfirmDeleteMember = async (id: string) => {
@@ -130,10 +153,6 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
     if (typeof window !== 'undefined') {
       window.print();
     }
-  };
-
-  const handleSelectLoan = (selectedLoanId: string) => {
-    router.push(`/members/${memberId}/loans/${selectedLoanId}`);
   };
 
   if (loading) {
@@ -232,6 +251,7 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
             lang={lang}
             onSelectLoan={handleSelectLoan}
             onOpenNewLoanModal={() => setIsNewLoanModalOpen(true)}
+            onToggleLoanStatus={handleToggleLoanStatus}
             onEdit={() => setIsEditModalOpen(true)}
             onPrint={handlePrint}
           />

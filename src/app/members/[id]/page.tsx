@@ -24,7 +24,8 @@ import {
   deleteTransaction, 
   updateMember, 
   createLoan,
-  deleteMember 
+  deleteMember,
+  updateLoanStatus
 } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 
@@ -60,48 +61,63 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadMemberData = async () => {
-    setLoading(true);
+  const loadMemberData = async (targetLoanId?: string, isInitial: boolean = false) => {
+    if (isInitial) setLoading(true);
     const m = await getMemberById(memberId);
     if (m) {
       setMember(m);
       const memberLoans = await getLoansForMember(m.id);
       setLoans(memberLoans);
-      const firstLoan = memberLoans[0] || null;
-      setActiveLoan(firstLoan);
 
-      if (firstLoan) {
-        const { rows, summary } = await getCalculatedLedgerForLoan(m, firstLoan);
+      const desiredId = targetLoanId || activeLoan?.id;
+      const currentL = memberLoans.find(l => l.id === desiredId || String(l.loan_no) === String(desiredId)) || memberLoans[0] || null;
+      setActiveLoan(currentL);
+
+      if (currentL) {
+        const { rows, summary } = await getCalculatedLedgerForLoan(m, currentL);
         setLedgerRows(rows);
         setFinancialSummary(summary);
       }
     }
-    setLoading(false);
+    if (isInitial) setLoading(false);
   };
 
   useEffect(() => {
-    loadMemberData();
+    loadMemberData(undefined, true);
   }, [memberId]);
+
+  const handleSelectLoan = async (selectedLoanId: string) => {
+    const selectedLoan = loans.find(l => l.id === selectedLoanId || String(l.loan_no) === String(selectedLoanId));
+    if (selectedLoan && member) {
+      setActiveLoan(selectedLoan);
+      const { rows, summary } = await getCalculatedLedgerForLoan(member, selectedLoan);
+      setLedgerRows(rows);
+      setFinancialSummary(summary);
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', `/members/${memberId}/loans/${selectedLoan.id}`);
+      }
+    }
+  };
 
   const handleAddTx = async (txData: Omit<Transaction, 'id' | 'created_at'>) => {
     await addTransaction({
       ...txData,
       loan_id: activeLoan?.id
     });
-    await loadMemberData();
+    await loadMemberData(activeLoan?.id);
   };
 
   const handleDeleteTx = async (txId: string) => {
     if (confirm('আপনি কি নিশ্চিত যে এই লেনদেনটি মুছে ফেলতে চান?')) {
       await deleteTransaction(txId);
-      await loadMemberData();
+      await loadMemberData(activeLoan?.id);
     }
   };
 
   const handleUpdateMember = async (updatedData: Omit<Member, 'id' | 'created_at'>) => {
     if (!member) return;
     const updated = await updateMember(member.id, updatedData);
-    await loadMemberData();
+    await loadMemberData(activeLoan?.id);
     if (updated) {
       setUpdatedSuccessMember(updated);
     }
@@ -110,8 +126,16 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const handleCreateNewLoan = async (loanData: Omit<Loan, 'id' | 'created_at'>, initialSavings: number) => {
     const newL = await createLoan(loanData, initialSavings);
     setIsNewLoanModalOpen(false);
-    await loadMemberData();
-    router.push(`/members/${memberId}/loans/${newL.id}`);
+    await loadMemberData(newL.id);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', `/members/${memberId}/loans/${newL.id}`);
+    }
+  };
+
+  const handleToggleLoanStatus = async (lId: string, currentStatus?: 'active' | 'closed') => {
+    const nextStatus = currentStatus === 'closed' ? 'active' : 'closed';
+    await updateLoanStatus(memberId, lId, nextStatus);
+    await loadMemberData(lId);
   };
 
   const handleConfirmDeleteMember = async (id: string) => {
@@ -126,10 +150,6 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
     if (typeof window !== 'undefined') {
       window.print();
     }
-  };
-
-  const handleSelectLoan = (selectedLoanId: string) => {
-    router.push(`/members/${memberId}/loans/${selectedLoanId}`);
   };
 
   if (loading) {
@@ -228,6 +248,7 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
             lang={lang}
             onSelectLoan={handleSelectLoan}
             onOpenNewLoanModal={() => setIsNewLoanModalOpen(true)}
+            onToggleLoanStatus={handleToggleLoanStatus}
             onEdit={() => setIsEditModalOpen(true)}
             onPrint={handlePrint}
           />

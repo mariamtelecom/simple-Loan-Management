@@ -1,10 +1,9 @@
-'use client';
-
 import React, { useState } from 'react';
-import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin, Folder, Plus, Landmark } from 'lucide-react';
+import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin, Folder, Plus, Landmark, CheckCircle, RotateCcw } from 'lucide-react';
 import styles from './PassbookHeader.module.css';
 import { Member, Loan } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
+import { toBengaliNumber } from '@/lib/db';
 
 interface PassbookHeaderProps {
   member: Member;
@@ -13,6 +12,7 @@ interface PassbookHeaderProps {
   lang: Language;
   onSelectLoan?: (loanId: string) => void;
   onOpenNewLoanModal?: () => void;
+  onToggleLoanStatus?: (loanId: string, currentStatus?: 'active' | 'closed') => void;
   onEdit?: () => void;
   onPrint?: () => void;
 }
@@ -24,6 +24,7 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   lang,
   onSelectLoan,
   onOpenNewLoanModal,
+  onToggleLoanStatus,
   onEdit,
   onPrint
 }) => {
@@ -41,6 +42,12 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   const currentTotalInstallments = activeLoan ? activeLoan.total_installments : (member.total_installments || 44);
   const currentAdmissionDate = activeLoan ? activeLoan.admission_date : (member.admission_date || '-');
   const currentLoanNo = activeLoan ? activeLoan.loan_no : 1;
+  const isCurrentLoanClosed = activeLoan?.status === 'closed';
+
+  // Multi-Loan Summaries Calculation
+  const totalLoansCount = loans.length || 1;
+  const completedLoansCount = loans.filter(l => l.status === 'closed').length;
+  const activeLoansCount = Math.max(0, totalLoansCount - completedLoansCount);
 
   return (
     <>
@@ -66,10 +73,32 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
                   <Hash size={12} style={{ display: 'inline', marginRight: 2 }} />
                   {t.memberNo}: {member.member_no}
                 </span>
-                {loans.length > 1 && (
-                  <span className="badge badge-info" style={{ marginLeft: 4 }}>
-                    <Landmark size={12} style={{ display: 'inline', marginRight: 3 }} />
-                    {t.loanNo} {currentLoanNo}
+                <span className="badge badge-info" style={{ marginLeft: 4 }}>
+                  <Landmark size={12} style={{ display: 'inline', marginRight: 3 }} />
+                  {t.loanNo} {toBengaliNumber(currentLoanNo)}
+                </span>
+              </div>
+
+              {/* Total Loans, Active Loans & Completed Loans Count Badges Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
+                <span className="badge badge-info" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', fontWeight: 600 }}>
+                  📊 {t.totalLoansCount}: {toBengaliNumber(totalLoansCount)}{t.countSuffix || 'টি'}
+                </span>
+                <span className="badge badge-success" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', fontWeight: 600 }}>
+                  🟢 {t.activeLoansCount}: {toBengaliNumber(activeLoansCount)}{t.countSuffix || 'টি'}
+                </span>
+                {completedLoansCount > 0 && (
+                  <span className="badge" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', backgroundColor: '#e2e8f0', color: '#334155', fontWeight: 600 }}>
+                    ✅ {t.completedLoansCount}: {toBengaliNumber(completedLoansCount)}{t.countSuffix || 'টি'}
+                  </span>
+                )}
+                {isCurrentLoanClosed ? (
+                  <span className="badge" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', backgroundColor: '#dcfce7', color: '#166534', fontWeight: 700, border: '1px solid #86efac' }}>
+                    ✅ ঋণ পরিশোধিত (Closed)
+                  </span>
+                ) : (
+                  <span className="badge badge-success" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', fontWeight: 700 }}>
+                    ⚡ চলতি ঋণ (Active)
                   </span>
                 )}
               </div>
@@ -77,6 +106,24 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
           </div>
 
           <div className={`${styles.actionsGroup} no-print`}>
+            {/* Toggle Loan Completion Status Button */}
+            {onToggleLoanStatus && activeLoan && (
+              <button
+                onClick={() => onToggleLoanStatus(activeLoan.id, activeLoan.status)}
+                className={`btn btn-sm ${isCurrentLoanClosed ? 'btn-secondary' : 'btn-primary'}`}
+                style={{
+                  borderColor: isCurrentLoanClosed ? '#10b981' : '#f59e0b',
+                  backgroundColor: isCurrentLoanClosed ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                  color: isCurrentLoanClosed ? '#047857' : '#d97706',
+                  fontWeight: 700
+                }}
+                title={isCurrentLoanClosed ? 'ঋণটি পুনরায় সক্রিয় করুন' : 'ঋণটি পরিশোধিত/সমাপ্ত হিসেবে মার্ক করুন'}
+              >
+                {isCurrentLoanClosed ? <RotateCcw size={15} /> : <CheckCircle size={15} />}
+                <span>{isCurrentLoanClosed ? 'ঋণ পুনরায় সক্রিয় করুন' : 'ঋণ সমাপ্ত (Complete) করুন'}</span>
+              </button>
+            )}
+
             {/* Google Drive Folder Link */}
             {member.drive_folder_url && (
               <a
@@ -136,7 +183,7 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
         <div className={styles.gridInfo}>
           <div className={styles.infoItem}>
             <span className={styles.label}>
-              {t.loanAmount} {loans.length > 1 ? `(ঋণ ${currentLoanNo})` : ''}
+              {t.loanAmount} {loans.length > 1 ? `(ঋণ ${toBengaliNumber(currentLoanNo)})` : ''}
             </span>
             <span className={styles.valueHighlight}>
               ৳ {Number(currentLoanAmount).toLocaleString()}
@@ -250,15 +297,19 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
           </span>
 
           {loans.map((l) => {
-            const isActive = activeLoan ? activeLoan.id === l.id : l.loan_no === 1;
+            const isActive = activeLoan ? (activeLoan.id === l.id || activeLoan.loan_no === l.loan_no) : l.loan_no === 1;
+            const isClosed = l.status === 'closed';
             return (
               <button
                 key={l.id}
                 onClick={() => onSelectLoan && onSelectLoan(l.id)}
                 className={`${styles.loanTab} ${isActive ? styles.loanTabActive : ''}`}
-                title={`ঋণ ${l.loan_no} (৳ ${l.loan_amount.toLocaleString()})`}
+                style={{
+                  borderLeft: isClosed ? '3px solid #10b981' : undefined
+                }}
+                title={`ঋণ ${l.loan_no} (৳ ${l.loan_amount.toLocaleString()}) - ${isClosed ? 'পরিশোধিত' : 'চলতি'}`}
               >
-                <span>🏦 {t.loanNo} {l.loan_no} (৳ {l.loan_amount.toLocaleString()})</span>
+                <span>🏦 {t.loanNo} {toBengaliNumber(l.loan_no)} (৳ {l.loan_amount.toLocaleString()}) {isClosed ? '✅' : '🟢'}</span>
               </button>
             );
           })}
