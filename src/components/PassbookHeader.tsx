@@ -1,21 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin, Folder } from 'lucide-react';
+import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin, Folder, Plus, Landmark } from 'lucide-react';
 import styles from './PassbookHeader.module.css';
-import { Member } from '@/lib/types';
+import { Member, Loan } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
 
 interface PassbookHeaderProps {
   member: Member;
+  loans?: Loan[];
+  activeLoan?: Loan | null;
   lang: Language;
+  onSelectLoan?: (loanId: string) => void;
+  onOpenNewLoanModal?: () => void;
   onEdit?: () => void;
   onPrint?: () => void;
 }
 
 export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   member,
+  loans = [],
+  activeLoan,
   lang,
+  onSelectLoan,
+  onOpenNewLoanModal,
   onEdit,
   onPrint
 }) => {
@@ -26,6 +34,13 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
 
   const hasMemberNid = !!(member.nid_front_url || member.nid_back_url || member.nid_image_url);
   const hasGuarantorNid = !!(member.guarantor_nid_front_url || member.guarantor_nid_back_url || member.guarantor_photo_url);
+
+  // Active Loan fallback to member defaults if activeLoan not passed
+  const currentLoanAmount = activeLoan ? activeLoan.loan_amount : (member.loan_amount || 0);
+  const currentLoanPurpose = activeLoan ? activeLoan.loan_purpose : (member.loan_purpose || '-');
+  const currentTotalInstallments = activeLoan ? activeLoan.total_installments : (member.total_installments || 44);
+  const currentAdmissionDate = activeLoan ? activeLoan.admission_date : (member.admission_date || '-');
+  const currentLoanNo = activeLoan ? activeLoan.loan_no : 1;
 
   return (
     <>
@@ -51,6 +66,12 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
                   <Hash size={12} style={{ display: 'inline', marginRight: 2 }} />
                   {t.memberNo}: {member.member_no}
                 </span>
+                {loans.length > 1 && (
+                  <span className="badge badge-info" style={{ marginLeft: 4 }}>
+                    <Landmark size={12} style={{ display: 'inline', marginRight: 3 }} />
+                    {t.loanNo} {currentLoanNo}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -114,9 +135,11 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
         {/* Grid of Passbook Header Details */}
         <div className={styles.gridInfo}>
           <div className={styles.infoItem}>
-            <span className={styles.label}>{t.loanAmount}</span>
+            <span className={styles.label}>
+              {t.loanAmount} {loans.length > 1 ? `(ঋণ ${currentLoanNo})` : ''}
+            </span>
             <span className={styles.valueHighlight}>
-              ৳ {Number(member.loan_amount || 0).toLocaleString()}
+              ৳ {Number(currentLoanAmount).toLocaleString()}
             </span>
           </div>
 
@@ -201,22 +224,55 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
             <span className={styles.label}>{t.loanPurpose}</span>
             <span className={styles.value}>
               <Target size={14} style={{ display: 'inline', marginRight: 4 }} />
-              {member.loan_purpose || '-'}
+              {currentLoanPurpose}
             </span>
           </div>
 
           <div className={styles.infoItem}>
             <span className={styles.label}>{t.totalInstallments}</span>
-            <span className={styles.value}>{member.total_installments || 44}</span>
+            <span className={styles.value}>{currentTotalInstallments}</span>
           </div>
 
           <div className={styles.infoItem}>
             <span className={styles.label}>{t.admissionDate}</span>
             <span className={styles.value}>
               <Calendar size={14} style={{ display: 'inline', marginRight: 4 }} />
-              {member.admission_date || '-'}
+              {currentAdmissionDate}
             </span>
           </div>
+        </div>
+
+        {/* Multi-Loan Navigation Tabs Bar */}
+        <div className={`${styles.loanTabsContainer} no-print`}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <Landmark size={15} style={{ color: 'var(--primary)' }} />
+            <span>{t.loanList}:</span>
+          </span>
+
+          {loans.map((l) => {
+            const isActive = activeLoan ? activeLoan.id === l.id : l.loan_no === 1;
+            return (
+              <button
+                key={l.id}
+                onClick={() => onSelectLoan && onSelectLoan(l.id)}
+                className={`${styles.loanTab} ${isActive ? styles.loanTabActive : ''}`}
+                title={`ঋণ ${l.loan_no} (৳ ${l.loan_amount.toLocaleString()})`}
+              >
+                <span>🏦 {t.loanNo} {l.loan_no} (৳ {l.loan_amount.toLocaleString()})</span>
+              </button>
+            );
+          })}
+
+          {onOpenNewLoanModal && (
+            <button
+              onClick={onOpenNewLoanModal}
+              className={styles.newLoanTabBtn}
+              title={t.takeNewLoan}
+            >
+              <Plus size={15} />
+              <span>{t.takeNewLoan}</span>
+            </button>
+          )}
         </div>
       </div>
 

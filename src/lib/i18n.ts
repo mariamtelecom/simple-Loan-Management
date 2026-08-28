@@ -67,7 +67,7 @@ export const translations = {
     rowsPerPageNote: "প্রতি পৃষ্ঠায় ১৫টি লেনদেন সারি প্রদর্শিত",
     noTransactionsYet: "এখনো কোনো লেনদেন যুক্ত করা হয়নি। 'নতুন লেনদেন যোগ করুন' বাটনে ক্লিক করে প্রথম কিস্তি বা জমা লিখুন।",
 
-    // Transaction Modal
+    // Transaction Modal & Multi Loan
     transactionType: "লেনদেনের প্রকার",
     savingsDeposit: "সঞ্চয় জমা",
     savingsWithdraw: "সঞ্চয় উত্তোলন",
@@ -76,7 +76,19 @@ export const translations = {
     notes: "মন্তব্য (ঐচ্ছিক)",
     confirmDelete: "আপনি কি নিশ্চিত যে এই সদস্যকে মুছে ফেলতে চান?",
     dbModeSupabase: "Supabase PostgreSQL মোড সক্রিয়",
-    dbModeLocal: "লোকাল স্টোরেজ (ডেমো) মোড সক্রিয়"
+    dbModeLocal: "লোকাল স্টোরেজ (ডেমো) মোড সক্রিয়",
+    
+    // Multi Loan Support
+    takeNewLoan: "নতুন ঋণ নিন",
+    takeNewLoanTitle: "নতুন ঋণ প্রদান ফরম",
+    takeNewLoanSubtitle: "একই সদস্যের অধীনে নতুন আরেকটি ঋণ অ্যাকাউন্ট খুলুন",
+    loanNo: "ঋণ নং",
+    loanList: "সদস্যের সকল ঋণসমূহ",
+    createNewLoanBtn: "+ নতুন ঋণ যোগ করুন",
+    totalLoansCount: "মোট ঋণ",
+    completedLoansCount: "পরিশোধিত",
+    activeLoansCount: "চলতি",
+    countSuffix: "টি"
   },
 
   en: {
@@ -145,7 +157,7 @@ export const translations = {
     rowsPerPageNote: "15 ledger rows displayed per passbook page",
     noTransactionsYet: "No transactions recorded yet. Click 'Add Transaction' to enter deposits or installment collections.",
 
-    // Transaction Modal
+    // Transaction Modal & Multi Loan
     transactionType: "Transaction Type",
     savingsDeposit: "Savings Deposit",
     savingsWithdraw: "Savings Withdrawal",
@@ -154,6 +166,20 @@ export const translations = {
     notes: "Notes (Optional)",
     confirmDelete: "Are you sure you want to delete this member?",
     dbModeSupabase: "Supabase PostgreSQL Active",
-    dbModeLocal: "Local Preview Mode Active"
+    dbModeLocal: "Local Preview Mode Active",
+
+    // Multi Loan Support
+    takeNewLoan: "Take New Loan",
+    takeNewLoanTitle: "Grant New Loan Form",
+    takeNewLoanSubtitle: "Open a new loan account under the same member",
+    loanNo: "Loan No",
+    loanList: "Member Loans",
+    createNewLoanBtn: "+ Add New Loan",
+    totalLoansCount: "Total Loans",
+    completedLoansCount: "Completed",
+    activeLoansCount: "Active",
+    countSuffix: ""
   }
 };
+
+

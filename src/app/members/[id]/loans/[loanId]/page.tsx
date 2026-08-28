@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { ArrowLeft, Plus, Edit, Trash2, Printer, AlertTriangle } from 'lucide-react';
-import styles from './member.module.css';
+import styles from '../../member.module.css';
 import { Navbar } from '@/components/Navbar';
 import { PassbookHeader } from '@/components/PassbookHeader';
 import { FinancialSummaryCard } from '@/components/FinancialSummaryCard';
@@ -19,6 +19,7 @@ import { Member, Loan, LedgerRowCalculation, FinancialSummary, Transaction } fro
 import { 
   getMemberById, 
   getLoansForMember,
+  getLoanById,
   getCalculatedLedgerForLoan, 
   addTransaction, 
   deleteTransaction, 
@@ -28,15 +29,15 @@ import {
 } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 
-interface MemberPageProps {
-  params: Promise<{ id: string }>;
+interface DedicatedLoanPageProps {
+  params: Promise<{ id: string; loanId: string }>;
 }
 
-export default function MemberPassbookPage({ params }: MemberPageProps) {
+export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageProps) {
   const resolvedParams = use(params);
   const memberId = resolvedParams.id;
-  const router = useRouter();
-
+  const loanId = resolvedParams.loanId;
+  
   const [lang, setLang] = useState<Language>('bn');
   const t = translations[lang];
 
@@ -60,18 +61,20 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadMemberData = async () => {
+  const loadData = async () => {
     setLoading(true);
     const m = await getMemberById(memberId);
     if (m) {
       setMember(m);
       const memberLoans = await getLoansForMember(m.id);
       setLoans(memberLoans);
-      const firstLoan = memberLoans[0] || null;
-      setActiveLoan(firstLoan);
 
-      if (firstLoan) {
-        const { rows, summary } = await getCalculatedLedgerForLoan(m, firstLoan);
+      const targetLoan = await getLoanById(m.id, loanId);
+      const currentL = targetLoan || memberLoans[0] || null;
+      setActiveLoan(currentL);
+
+      if (currentL) {
+        const { rows, summary } = await getCalculatedLedgerForLoan(m, currentL);
         setLedgerRows(rows);
         setFinancialSummary(summary);
       }
@@ -80,28 +83,28 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   };
 
   useEffect(() => {
-    loadMemberData();
-  }, [memberId]);
+    loadData();
+  }, [memberId, loanId]);
 
   const handleAddTx = async (txData: Omit<Transaction, 'id' | 'created_at'>) => {
     await addTransaction({
       ...txData,
       loan_id: activeLoan?.id
     });
-    await loadMemberData();
+    await loadData();
   };
 
   const handleDeleteTx = async (txId: string) => {
     if (confirm('আপনি কি নিশ্চিত যে এই লেনদেনটি মুছে ফেলতে চান?')) {
       await deleteTransaction(txId);
-      await loadMemberData();
+      await loadData();
     }
   };
 
   const handleUpdateMember = async (updatedData: Omit<Member, 'id' | 'created_at'>) => {
     if (!member) return;
     const updated = await updateMember(member.id, updatedData);
-    await loadMemberData();
+    await loadData();
     if (updated) {
       setUpdatedSuccessMember(updated);
     }
@@ -109,7 +112,9 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
 
   const handleCreateNewLoan = async (loanData: Omit<Loan, 'id' | 'created_at'>, initialSavings: number) => {
     const newL = await createLoan(loanData, initialSavings);
-    router.push(`/members/${memberId}/loans/${newL.id}`);
+    if (typeof window !== 'undefined') {
+      window.location.href = `/members/${memberId}/loans/${newL.id}`;
+    }
   };
 
   const handleConfirmDeleteMember = async (id: string) => {
@@ -127,7 +132,9 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   };
 
   const handleSelectLoan = (selectedLoanId: string) => {
-    router.push(`/members/${memberId}/loans/${selectedLoanId}`);
+    if (typeof window !== 'undefined') {
+      window.location.href = `/members/${memberId}/loans/${selectedLoanId}`;
+    }
   };
 
   if (loading) {
@@ -230,10 +237,10 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
             onPrint={handlePrint}
           />
 
-          {/* Financial Calculation Banner */}
+          {/* Financial Calculation Banner (Loan-specific Money Balances) */}
           <FinancialSummaryCard summary={financialSummary} lang={lang} />
 
-          {/* 15-Row Paginated Ledger Table */}
+          {/* 15-Row Paginated Ledger Table for active Loan */}
           <LedgerTable
             rows={ledgerRows}
             lang={lang}
@@ -296,11 +303,12 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
         memberNo={deletedSuccessInfo?.memberNo}
         onClose={() => {
           setDeletedSuccessInfo(null);
-          router.push('/');
+          if (typeof window !== 'undefined') {
+            window.location.href = '/';
+          }
         }}
         lang={lang}
       />
     </>
   );
 }
-

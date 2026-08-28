@@ -15,7 +15,9 @@ import {
   User,
   ShieldCheck,
   FileText,
-  Trash2
+  Trash2,
+  Landmark,
+  Clock
 } from 'lucide-react';
 import styles from './page.module.css';
 import { Navbar } from '@/components/Navbar';
@@ -25,7 +27,7 @@ import { DeleteMemberModal } from '@/components/DeleteMemberModal';
 import { DeleteSuccessModal } from '@/components/DeleteSuccessModal';
 import { DeleteAllDataModal } from '@/components/DeleteAllDataModal';
 import { Member } from '@/lib/types';
-import { getMembers, createMember, deleteMember, deleteAllData, getCalculatedLedger, getDashboardStats } from '@/lib/db';
+import { getMembers, createMember, deleteMember, deleteAllData, getCalculatedLedger, getMemberTotalSummary, getDashboardStats } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 
 export default function DashboardPage() {
@@ -49,7 +51,13 @@ export default function DashboardPage() {
   });
 
   const [memberSummaries, setMemberSummaries] = useState<{
-    [id: string]: { remaining: number; savings: number };
+    [id: string]: { 
+      remaining: number; 
+      savings: number; 
+      loanCount: number;
+      completedLoanCount: number;
+      activeLoanCount: number;
+    };
   }>({});
 
   const loadData = async () => {
@@ -59,12 +67,15 @@ export default function DashboardPage() {
     const dbStats = await getDashboardStats();
     setStats(dbStats);
 
-    const summariesMap: { [id: string]: { remaining: number; savings: number } } = {};
+    const summariesMap: { [id: string]: { remaining: number; savings: number; loanCount: number; completedLoanCount: number; activeLoanCount: number } } = {};
     for (const m of list) {
-      const { summary } = await getCalculatedLedger(m);
+      const { total_remaining_loan, total_savings, loan_count, completed_loan_count, active_loan_count } = await getMemberTotalSummary(m);
       summariesMap[m.id] = {
-        remaining: summary.remaining_loan,
-        savings: summary.total_savings
+        remaining: total_remaining_loan,
+        savings: total_savings,
+        loanCount: loan_count,
+        completedLoanCount: completed_loan_count,
+        activeLoanCount: active_loan_count
       };
     }
     setMemberSummaries(summariesMap);
@@ -211,7 +222,13 @@ export default function DashboardPage() {
           {filteredMembers.length > 0 ? (
             <div className={styles.membersGrid}>
               {filteredMembers.map((m) => {
-                const summary = memberSummaries[m.id] || { remaining: m.loan_amount, savings: m.savings_initial };
+                const summary = memberSummaries[m.id] || { 
+                  remaining: m.loan_amount, 
+                  savings: m.savings_initial,
+                  loanCount: 1,
+                  completedLoanCount: 0,
+                  activeLoanCount: 1
+                };
                 return (
                   <div key={m.id} className={styles.memberCard}>
                     <div className={styles.memberTop}>
@@ -244,8 +261,29 @@ export default function DashboardPage() {
                             <span>NID: {m.nid_number}</span>
                           </div>
                         )}
+
+                        {/* Loan Count Badges (Total, Completed, Active) */}
+                        <div className={styles.loanBadgeRow}>
+                          <span className={styles.loanCountPill} title={t.totalLoansCount}>
+                            <Landmark size={11} />
+                            <span>{t.totalLoansCount}: {summary.loanCount || 1}{t.countSuffix}</span>
+                          </span>
+
+                          {summary.completedLoanCount > 0 && (
+                            <span className={styles.completedCountPill} title={t.completedLoansCount}>
+                              <CheckCircle2 size={11} />
+                              <span>{t.completedLoansCount}: {summary.completedLoanCount}{t.countSuffix}</span>
+                            </span>
+                          )}
+
+                          <span className={styles.activeCountPill} title={t.activeLoansCount}>
+                            <Clock size={11} />
+                            <span>{t.activeLoansCount}: {summary.activeLoanCount || 1}{t.countSuffix}</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
+
 
                     <div className={styles.financialRow}>
                       <div className={styles.finBox}>

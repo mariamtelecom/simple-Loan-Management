@@ -1,4 +1,4 @@
-import { Member, Transaction, LedgerRowCalculation, FinancialSummary } from './types';
+import { Member, Transaction, Loan, LedgerRowCalculation, FinancialSummary } from './types';
 import { 
   supabasePrimary, 
   supabaseSecondary, 
@@ -8,6 +8,8 @@ import {
 
 const LOCAL_STORAGE_MEMBERS_KEY = 'loan_mgmt_members_v4';
 const LOCAL_STORAGE_TRANSACTIONS_KEY = 'loan_mgmt_transactions_v4';
+const LOCAL_STORAGE_LOANS_KEY = 'loan_mgmt_loans_v4';
+
 
 // Helper to convert English digits to Bengali numerals
 export function toBengaliNumber(num: number | string): string {
@@ -165,6 +167,21 @@ function removeTransactionFromLocalBackup(id: string) {
   const filtered = all.filter(t => t.id !== id);
   localStorage.setItem(LOCAL_STORAGE_TRANSACTIONS_KEY, JSON.stringify(filtered));
 }
+
+function saveLoanToLocalBackup(loan: Loan) {
+  if (typeof window === 'undefined') return;
+  initializeLocalStorage();
+  const raw = localStorage.getItem(LOCAL_STORAGE_LOANS_KEY);
+  const loans: Loan[] = raw ? JSON.parse(raw) : [];
+  const idx = loans.findIndex(l => l.id === loan.id);
+  if (idx >= 0) {
+    loans[idx] = loan;
+  } else {
+    loans.push(loan);
+  }
+  localStorage.setItem(LOCAL_STORAGE_LOANS_KEY, JSON.stringify(loans));
+}
+
 
 // ----------------------------------------------------------------------
 // MULTI-CLOUD DUAL SUPABASE API FUNCTIONS
@@ -499,43 +516,278 @@ export async function getTransactionsForMember(memberId: string): Promise<Transa
   return mergedList.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
-export async function getCalculatedLedger(member: Member): Promise<{
+// ----------------------------------------------------------------------
+// LOANS API & MULTI-LOAN FUNCTIONS
+// ----------------------------------------------------------------------
+
+export async function getLoansForMember(memberId: string): Promise<Loan[]> {
+  const member = await getMemberById(memberId);
+  if (!member) return [];
+
+  const loanMap = new Map<string, Loan>();
+
+  // 1. Always include member's original primary loan as Loan 1 (id: member.id)
+  const defaultLoan1: Loan = {
+    id: member.id,
+    member_id: member.id,
+    loan_no: 1,
+    loan_amount: Number(member.loan_amount || 0),
+    loan_purpose: member.loan_purpose || 'সাধারণ ঋণ',
+    total_installments: Number(member.total_installments || 44),
+    admission_date: member.admission_date || new Date().toISOString().split('T')[0],
+    status: member.status || 'active',
+    created_at: member.created_at
+  };
+  loanMap.set(defaultLoan1.id, defaultLoan1);
+
+  // 2. Fetch loans from Primary Supabase DB
+  if (isPrimaryConfigured && supabasePrimary) {
+    try {
+      const { data, error } = await supabasePrimary
+        .from('loans')
+        .select('*')
+        .eq('member_id', memberId)
+        .order('loan_no', { ascending: true });
+      if (!error && data && data.length > 0) {
+        data.forEach((l: Loan) => {
+          if (l.id) {
+            if (l.loan_no === 1 || l.id === member.id) {
+              loanMap.set(defaultLoan1.id, { ...defaultLoan1, ...l, loan_no: 1 });
+            } else {
+              loanMap.set(l.id, l);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Primary Supabase loans fetch warning', e);
+    }
+  }
+
+  // 3. Fetch loans from Secondary Supabase DB
+  if (isSecondaryConfigured && supabaseSecondary) {
+    try {
+      const { data, error } = await supabaseSecondary
+        .from('loans')
+        .select('*')
+        .eq('member_id', memberId)
+        .order('loan_no', { ascending: true });
+      if (!error && data && data.length > 0) {
+        data.forEach((l: Loan) => {
+          if (l.id) {
+            if (l.loan_no === 1 || l.id === member.id) {
+              loanMap.set(defaultLoan1.id, { ...defaultLoan1, ...l, loan_no: 1 });
+            } else if (!loanMap.has(l.id)) {
+              loanMap.set(l.id, l);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Secondary Supabase loans fetch warning', e);
+    }
+  }
+
+  // 4. Fetch loans from Local Storage Backup
+  if (typeof window !== 'undefined') {
+    const raw = localStorage.getItem(LOCAL_STORAGE_LOANS_KEY);
+    const localLoans: Loan[] = raw ? JSON.parse(raw) : [];
+    localLoans.filter(l => l.member_id === memberId).forEach((l: Loan) => {
+      if (l.id) {
+        if (l.loan_no === 1 || l.id === member.id) {
+          loanMap.set(defaultLoan1.id, { ...defaultLoan1, ...l, loan_no: 1 });
+        } else if (!loanMap.has(l.id)) {
+          loanMap.set(l.id, l);
+        }
+      }
+    });
+  }
+
+  // 5. Sort loans strictly by loan_no serial 1, 2, 3...
+  const sortedLoans = Array.from(loanMap.values()).sort((a, b) => (a.loan_no || 1) - (b.loan_no || 1));
+
+  // Ensure serial numbers are clean 1, 2, 3...
+  return sortedLoans.map((l, index) => ({
+    ...l,
+    loan_no: index + 1
+  }));
+}
+
+export async function getLoanById(memberId: string, loanId: string): Promise<Loan | null> {
+  const loans = await getLoansForMember(memberId);
+  return loans.find(l => l.id === loanId || l.id === memberId || (loanId === 'default' && l.loan_no === 1)) || loans[0] || null;
+}
+
+
+export async function createLoan(
+  loanData: Omit<Loan, 'id' | 'created_at'>,
+  initialSavingsDeposit: number = 0
+): Promise<Loan> {
+  const existingLoans = await getLoansForMember(loanData.member_id);
+  const nextLoanNo = loanData.loan_no || (existingLoans.length + 1);
+
+  let newLoan: Loan = {
+    ...loanData,
+    loan_no: nextLoanNo,
+    id: 'l-' + Date.now(),
+    created_at: new Date().toISOString()
+  };
+
+  const payload = {
+    member_id: newLoan.member_id,
+    loan_no: newLoan.loan_no,
+    loan_amount: Number(newLoan.loan_amount),
+    loan_purpose: newLoan.loan_purpose,
+    total_installments: Number(newLoan.total_installments),
+    admission_date: newLoan.admission_date,
+    status: 'active'
+  };
+
+  if (isPrimaryConfigured && supabasePrimary) {
+    try {
+      const { data, error } = await supabasePrimary.from('loans').insert([payload]).select().single();
+      if (!error && data) {
+        newLoan = data as Loan;
+      }
+    } catch (e) {
+      console.warn('Primary Supabase loan insert warning', e);
+    }
+  }
+
+  if (isSecondaryConfigured && supabaseSecondary) {
+    try {
+      await supabaseSecondary.from('loans').insert([payload]);
+    } catch (e) {
+      console.warn('Secondary Supabase loan insert warning', e);
+    }
+  }
+
+  saveLoanToLocalBackup(newLoan);
+
+  // If initial savings deposit specified when taking this loan, automatically record transaction!
+  if (initialSavingsDeposit > 0) {
+    await addTransaction({
+      member_id: newLoan.member_id,
+      loan_id: newLoan.id,
+      date: newLoan.admission_date,
+      savings_deposit: Number(initialSavingsDeposit),
+      savings_withdraw: 0,
+      installment_no: null,
+      loan_repayment: 0,
+      collector_signature: 'জসিম',
+      notes: `নতুন ঋণ (ঋণ ${newLoan.loan_no}) গ্রহণের সময় সঞ্চয় জমা`
+    });
+  }
+
+  return newLoan;
+}
+
+
+export async function getCalculatedLedgerForLoan(member: Member, loan: Loan): Promise<{
   rows: LedgerRowCalculation[];
   summary: FinancialSummary;
 }> {
-  const transactions = await getTransactionsForMember(member.id);
+  const allTxs = await getTransactionsForMember(member.id);
 
-  let currentSavings = Number(member.savings_initial || 0);
-  let currentLoanBalance = Number(member.loan_amount || 0);
+  // Filter transactions for this specific loan
+  const loanTxs = allTxs.filter((t) => {
+    if (t.loan_id) {
+      return t.loan_id === loan.id;
+    }
+    // Legacy transactions without loan_id map to Loan 1
+    return loan.loan_no === 1 || loan.id === member.id;
+  });
+
+  let currentLoanBalance = Number(loan.loan_amount || 0);
   let totalLoanPaid = 0;
 
-  const rows: LedgerRowCalculation[] = transactions.map((t) => {
-    const deposit = Number(t.savings_deposit || 0);
-    const withdraw = Number(t.savings_withdraw || 0);
-    const repayment = Number(t.loan_repayment || 0);
+  // Calculate cumulative savings across all member transactions
+  let runningSavingsAcrossMember = Number(member.savings_initial || 0);
+  const memberSavingsMap = new Map<string, number>();
 
-    currentSavings = currentSavings + deposit - withdraw;
+  allTxs.forEach((t) => {
+    runningSavingsAcrossMember += Number(t.savings_deposit || 0) - Number(t.savings_withdraw || 0);
+    memberSavingsMap.set(t.id, runningSavingsAcrossMember);
+  });
+
+  const rows: LedgerRowCalculation[] = loanTxs.map((t) => {
+    const repayment = Number(t.loan_repayment || 0);
     currentLoanBalance = Math.max(0, currentLoanBalance - repayment);
     totalLoanPaid += repayment;
 
     return {
       ...t,
-      running_total_savings: currentSavings,
+      running_total_savings: memberSavingsMap.get(t.id) ?? runningSavingsAcrossMember,
       running_loan_balance: currentLoanBalance
     };
   });
 
   const summary: FinancialSummary = {
-    total_loan: Number(member.loan_amount || 0),
+    total_loan: Number(loan.loan_amount || 0),
     total_repaid: totalLoanPaid,
     remaining_loan: currentLoanBalance,
-    total_savings: currentSavings,
-    repayment_progress: Number(member.loan_amount) > 0
-      ? Math.min(100, Math.round((totalLoanPaid / Number(member.loan_amount)) * 100))
+    total_savings: runningSavingsAcrossMember,
+    repayment_progress: Number(loan.loan_amount) > 0
+      ? Math.min(100, Math.round((totalLoanPaid / Number(loan.loan_amount)) * 100))
       : 100
   };
 
   return { rows, summary };
+}
+
+export async function getMemberTotalSummary(member: Member): Promise<{
+  total_remaining_loan: number;
+  total_savings: number;
+  loan_count: number;
+  completed_loan_count: number;
+  active_loan_count: number;
+}> {
+  const loans = await getLoansForMember(member.id);
+  let totalRemaining = 0;
+  let completedCount = 0;
+  let activeCount = 0;
+
+  for (const loan of loans) {
+    const { summary } = await getCalculatedLedgerForLoan(member, loan);
+    totalRemaining += summary.remaining_loan;
+    if (summary.remaining_loan <= 0 && summary.total_loan > 0) {
+      completedCount++;
+    } else {
+      activeCount++;
+    }
+  }
+  const { summary: defaultSummary } = await getCalculatedLedger(member);
+
+  return {
+    total_remaining_loan: totalRemaining,
+    total_savings: defaultSummary.total_savings,
+    loan_count: loans.length,
+    completed_loan_count: completedCount,
+    active_loan_count: activeCount
+  };
+}
+
+
+export async function getCalculatedLedger(member: Member): Promise<{
+  rows: LedgerRowCalculation[];
+  summary: FinancialSummary;
+}> {
+  const loans = await getLoansForMember(member.id);
+  const activeLoan = loans[0];
+  if (activeLoan) {
+    return getCalculatedLedgerForLoan(member, activeLoan);
+  }
+
+  return {
+    rows: [],
+    summary: {
+      total_loan: Number(member.loan_amount || 0),
+      total_repaid: 0,
+      remaining_loan: Number(member.loan_amount || 0),
+      total_savings: Number(member.savings_initial || 0),
+      repayment_progress: 0
+    }
+  };
 }
 
 /**
@@ -550,6 +802,7 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'crea
 
   const txPayload = {
     member_id: transaction.member_id,
+    loan_id: transaction.loan_id || null,
     date: transaction.date,
     savings_deposit: Number(transaction.savings_deposit || 0),
     savings_withdraw: Number(transaction.savings_withdraw || 0),
@@ -628,11 +881,15 @@ export async function getDashboardStats(): Promise<{
   let totalSavings = 0;
 
   for (const member of members) {
-    const { summary } = await getCalculatedLedger(member);
-    totalGranted += summary.total_loan;
-    totalCollected += summary.total_repaid;
-    totalRemaining += summary.remaining_loan;
-    totalSavings += summary.total_savings;
+    const loans = await getLoansForMember(member.id);
+    for (const loan of loans) {
+      const { summary } = await getCalculatedLedgerForLoan(member, loan);
+      totalGranted += summary.total_loan;
+      totalCollected += summary.total_repaid;
+      totalRemaining += summary.remaining_loan;
+    }
+    const { summary: defaultSummary } = await getCalculatedLedger(member);
+    totalSavings += defaultSummary.total_savings;
   }
 
   return {
@@ -682,20 +939,22 @@ export async function exportFullBackupJSON() {
  * DELETE ALL DATA: Purge all members and transactions from Primary Supabase Cloud DB, Secondary Supabase Cloud DB, and Local Storage Backup.
  */
 export async function deleteAllData(): Promise<boolean> {
-  // 1. Delete all transactions and members from Primary Supabase DB
+  // 1. Delete all transactions, loans and members from Primary Supabase DB
   if (isPrimaryConfigured && supabasePrimary) {
     try {
       await supabasePrimary.from('transactions').delete().neq('id', '');
+      await supabasePrimary.from('loans').delete().neq('id', '');
       await supabasePrimary.from('members').delete().neq('id', '');
     } catch (e) {
       console.warn('Primary Supabase wipe failed', e);
     }
   }
 
-  // 2. Delete all transactions and members from Secondary Supabase DB
+  // 2. Delete all transactions, loans and members from Secondary Supabase DB
   if (isSecondaryConfigured && supabaseSecondary) {
     try {
       await supabaseSecondary.from('transactions').delete().neq('id', '');
+      await supabaseSecondary.from('loans').delete().neq('id', '');
       await supabaseSecondary.from('members').delete().neq('id', '');
     } catch (e) {
       console.warn('Secondary Supabase wipe failed', e);
@@ -707,6 +966,7 @@ export async function deleteAllData(): Promise<boolean> {
     try {
       localStorage.removeItem(LOCAL_STORAGE_MEMBERS_KEY);
       localStorage.removeItem(LOCAL_STORAGE_TRANSACTIONS_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_LOANS_KEY);
       localStorage.removeItem('loan_mgmt_members_v1');
       localStorage.removeItem('loan_mgmt_members_v2');
       localStorage.removeItem('loan_mgmt_members_v3');
@@ -715,6 +975,7 @@ export async function deleteAllData(): Promise<boolean> {
       localStorage.removeItem('loan_mgmt_transactions_v3');
       localStorage.setItem(LOCAL_STORAGE_MEMBERS_KEY, JSON.stringify([]));
       localStorage.setItem(LOCAL_STORAGE_TRANSACTIONS_KEY, JSON.stringify([]));
+      localStorage.setItem(LOCAL_STORAGE_LOANS_KEY, JSON.stringify([]));
     } catch (e) {
       console.warn('LocalStorage clear failed', e);
     }
@@ -722,4 +983,5 @@ export async function deleteAllData(): Promise<boolean> {
 
   return true;
 }
+
 

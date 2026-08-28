@@ -60,7 +60,7 @@ export const LedgerTable: React.FC<LedgerTableProps> = ({
           <thead>
             {/* Header Row 1 - Groupings matching Bengali passbook image */}
             <tr>
-              <th rowSpan={2} style={{ width: '100px' }}>{t.date}</th>
+              <th rowSpan={2} style={{ width: '130px' }}>{t.date}</th>
               <th colSpan={3} className={`${styles.groupHeader} ${styles.savingsHeader}`}>
                 {t.savingsDetails} (সঞ্চয়ের বিবরণ)
               </th>

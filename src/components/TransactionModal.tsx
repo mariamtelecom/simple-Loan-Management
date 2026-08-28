@@ -9,6 +9,7 @@ import { Language, translations } from '@/lib/i18n';
 interface TransactionModalProps {
   isOpen: boolean;
   memberId: string;
+  loanId?: string;
   onClose: () => void;
   onSave: (tx: Omit<Transaction, 'id' | 'created_at'>) => Promise<void>;
   lang: Language;
@@ -17,13 +18,24 @@ interface TransactionModalProps {
 export const TransactionModal: React.FC<TransactionModalProps> = ({
   isOpen,
   memberId,
+  loanId,
   onClose,
   onSave,
   lang
 }) => {
   const t = translations[lang];
 
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const getNowDateTimeLocal = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const [date, setDate] = useState(getNowDateTimeLocal());
   const [savingsDeposit, setSavingsDeposit] = useState('');
   const [savingsWithdraw, setSavingsWithdraw] = useState('');
   const [installmentNo, setInstallmentNo] = useState('');
@@ -36,11 +48,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Format ISO/Readable DateTime String (e.g., 2026-08-29 01:04 PM)
+    const dt = new Date(date);
+    const dateFormatted = isNaN(dt.getTime())
+      ? date
+      : `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
     setSubmitting(true);
     try {
       await onSave({
         member_id: memberId,
-        date,
+        loan_id: loanId,
+        date: dateFormatted,
         savings_deposit: Number(savingsDeposit || 0),
         savings_withdraw: Number(savingsWithdraw || 0),
         installment_no: installmentNo ? Number(installmentNo) : null,
@@ -68,17 +88,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         <form onSubmit={handleSubmit}>
           <div className={styles.form}>
-            {/* Date */}
+            {/* Date & Time */}
             <div className={styles.field}>
-              <label className={styles.label}>{t.date} *</label>
+              <label className={styles.label}>{t.date} (তারিখ ও সময়) *</label>
               <input
-                type="date"
+                type="datetime-local"
                 required
                 className={styles.input}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
             </div>
+
 
             {/* Savings Deposit & Withdraw */}
             <div className={styles.grid}>

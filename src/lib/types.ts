@@ -30,9 +30,23 @@ export interface Member {
   updated_at?: string;
 }
 
+export interface Loan {
+  id: string;
+  member_id: string;
+  loan_no: number;           // ঋণ নং (e.g. 1, 2, 3...)
+  loan_amount: number;       // ঋণের পরিমাণ (e.g. 100000)
+  loan_purpose: string;      // ঋণের উদ্দেশ্য (e.g. "ব্যবসা")
+  total_installments: number;// কিস্তির সংখ্যা (e.g. 44)
+  admission_date: string;    // ঋণ প্রদানের তারিখ (e.g. "2024-06-20")
+  status?: 'active' | 'closed';
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Transaction {
   id: string;
   member_id: string;
+  loan_id?: string;          // specific loan ID (optional for legacy transactions)
   date: string;              // তারিখ (YYYY-MM-DD or readable date)
   savings_deposit: number;   // জমা
   savings_withdraw: number;  // উত্তোলন
@@ -55,3 +69,4 @@ export interface FinancialSummary {
   total_savings: number;
   repayment_progress: number;
 }
+
