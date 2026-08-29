@@ -92,7 +92,7 @@ export const RecentTransactionsTable: React.FC<RecentTransactionsTableProps> = (
                 <th style={{ width: '110px' }}>{t.collection}</th>
                 <th style={{ width: '110px' }}>{t.installmentNo}</th>
                 <th style={{ width: '130px' }}>{t.collectorSignature}</th>
-                <th style={{ width: '120px' }} className="no-print" style={{ textAlign: 'center' }}>
+                <th className="no-print" style={{ width: '120px', textAlign: 'center' }}>
                   রসিদ প্রিন্ট
                 </th>
               </tr>
