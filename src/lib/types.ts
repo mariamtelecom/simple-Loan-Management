@@ -7,7 +7,7 @@ export interface Member {
   savings_initial: number;   // সঞ্চয় জমা সহ (e.g. 20000)
   loan_purpose: string;      // ঋণের উদ্দেশ্য (e.g. "ব্যবসা")
   admission_date: string;    // ভর্তির তারিখ (e.g. "2024-06-20")
-  total_installments: number;// কিস্তির সংখ্যা (e.g. 44)
+  total_installments: number;// কিস্তির সংখ্যা (e.g. 15)
   mobile: string;            // সদস্যের মোবাইল
   address: string;           // সদস্যের ঠিকানা (Member Address)
   book_no: string;           // বই নং / পৃষ্ঠা (e.g. "১")
@@ -36,7 +36,7 @@ export interface Loan {
   loan_no: number;           // ঋণ নং (e.g. 1, 2, 3...)
   loan_amount: number;       // ঋণের পরিমাণ (e.g. 100000)
   loan_purpose: string;      // ঋণের উদ্দেশ্য (e.g. "ব্যবসা")
-  total_installments: number;// কিস্তির সংখ্যা (e.g. 44)
+  total_installments: number;// কিস্তির সংখ্যা (e.g. 15)
   admission_date: string;    // ঋণ প্রদানের তারিখ (e.g. "2024-06-20")
   status?: 'active' | 'closed';
   created_at?: string;

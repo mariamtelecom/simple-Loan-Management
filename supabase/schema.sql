@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.members (
     savings_initial NUMERIC(12, 2) NOT NULL DEFAULT 0, -- প্রাথমিক সঞ্চয় জমা সহ
     loan_purpose VARCHAR(255) DEFAULT '',       -- ঋণের উদ্দেশ্য
     admission_date DATE DEFAULT CURRENT_DATE,   -- ভর্তির তারিখ
-    total_installments INT DEFAULT 44,          -- কিস্তির সংখ্যা
+    total_installments INT DEFAULT 15,          -- কিস্তির সংখ্যা
     mobile VARCHAR(30) NOT NULL DEFAULT '',     -- সদস্যের মোবাইল
     address TEXT DEFAULT '',                    -- সদস্যের ঠিকানা (Member Address)
     book_no VARCHAR(50) DEFAULT '1',            -- বই নং / পৃষ্ঠা
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS public.loans (
     loan_no INT NOT NULL DEFAULT 1,             -- ঋণের ক্রম (1, 2, 3...)
     loan_amount NUMERIC(12, 2) NOT NULL DEFAULT 0, -- ঋণের পরিমাণ
     loan_purpose VARCHAR(255) DEFAULT '',       -- ঋণের উদ্দেশ্য
-    total_installments INT DEFAULT 44,          -- কিস্তির সংখ্যা
+    total_installments INT DEFAULT 15,          -- কিস্তির সংখ্যা
     admission_date DATE DEFAULT CURRENT_DATE,   -- ভর্তির তারিখ
     status VARCHAR(20) DEFAULT 'active',        -- active, closed
     created_at TIMESTAMPTZ DEFAULT NOW(),
