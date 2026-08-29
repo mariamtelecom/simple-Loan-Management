@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck, LogOut, Trash2 } from 'lucide-react';
+import { BookOpen, Plus, Search, Globe, Database, Download, ShieldCheck, LogOut, Trash2, Receipt } from 'lucide-react';
 import styles from './Navbar.module.css';
 import { Language, translations } from '@/lib/i18n';
 import { isPrimaryConfigured } from '@/lib/supabaseClient';
@@ -13,6 +13,7 @@ interface NavbarProps {
   lang: Language;
   onToggleLang: () => void;
   onOpenAddMemberModal?: () => void;
+  onScrollToRecentTransactions?: () => void;
   onOpenDeleteAllModal?: () => void;
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
@@ -22,6 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   lang,
   onToggleLang,
   onOpenAddMemberModal,
+  onScrollToRecentTransactions,
   onOpenDeleteAllModal,
   searchQuery = '',
   onSearchChange
@@ -79,19 +81,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className={styles.btnLabel}>ব্যাকআপ ফাইল</span>
             </button>
 
-            {/* Delete All Data Button (Hidden - uncomment if needed later)
-            {onOpenDeleteAllModal && (
-              <button
-                onClick={onOpenDeleteAllModal}
-                className="btn btn-danger btn-sm"
-                title="সকল ডেমো ও বর্তমান তথ্য ডিলিট করুন (Clear All Data)"
-              >
-                <Trash2 size={14} />
-                <span className={styles.btnLabel}>{lang === 'bn' ? 'সকল তথ্য মুছুন' : 'Delete All Data'}</span>
-              </button>
-            )}
-            */}
-
             {/* Language Toggle */}
             <button
               onClick={onToggleLang}
@@ -102,16 +91,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>{lang === 'bn' ? 'English' : 'বাংলা'}</span>
             </button>
 
-            {/* Add Member CTA */}
-            {onOpenAddMemberModal && (
-              <button
-                onClick={onOpenAddMemberModal}
-                className="btn btn-primary btn-sm"
-              >
-                <Plus size={16} />
-                <span className={styles.btnLabel}>{t.addMember}</span>
-              </button>
-            )}
+            {/* Recent Transactions Page Link (Replaces duplicate Add Member button in Navbar) */}
+            <Link
+              href="/transactions"
+              className="btn btn-primary btn-sm"
+              title="সকল সদস্যদের সাম্প্রতিক লেনদেন লগে যান"
+            >
+              <Receipt size={15} />
+              <span className={styles.btnLabel}>সাম্প্রতিক লেনদেন</span>
+            </Link>
 
             {/* Firebase Logout */}
             <button

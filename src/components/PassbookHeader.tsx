@@ -191,9 +191,11 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
           </div>
 
           <div className={styles.infoItem}>
-            <span className={styles.label}>{t.savingsInitial}</span>
+            <span className={styles.label}>
+              {t.savingsInitial} {loans.length > 1 ? `(ঋণ ${toBengaliNumber(currentLoanNo)})` : ''}
+            </span>
             <span className={styles.value}>
-              ৳ {Number(member.savings_initial || 0).toLocaleString()}
+              ৳ {Number((!activeLoan || activeLoan.loan_no === 1) ? (member.savings_initial || 0) : 0).toLocaleString()}
             </span>
           </div>
 

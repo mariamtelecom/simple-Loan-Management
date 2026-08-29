@@ -6,9 +6,13 @@ import styles from './LoanFormModal.module.css';
 import { Member, Loan } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
 
+import { ExistingLoanSummary } from './ExistingLoansAlertModal';
+import { toBengaliNumber } from '@/lib/db';
+
 interface LoanFormModalProps {
   isOpen: boolean;
   member: Member;
+  existingLoanSummaries?: ExistingLoanSummary[];
   onClose: () => void;
   onSave: (loan: Omit<Loan, 'id' | 'created_at'>, initialSavings: number) => Promise<void>;
   lang: Language;
@@ -17,6 +21,7 @@ interface LoanFormModalProps {
 export const LoanFormModal: React.FC<LoanFormModalProps> = ({
   isOpen,
   member,
+  existingLoanSummaries = [],
   onClose,
   onSave,
   lang
@@ -101,6 +106,22 @@ export const LoanFormModal: React.FC<LoanFormModalProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Existing Loans Completion Summary Box */}
+            {existingLoanSummaries && existingLoanSummaries.length > 0 && (
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  📊 পূর্ববর্তী ঋণের অগ্রগতি:
+                </span>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {existingLoanSummaries.map(({ loan, summary }) => (
+                    <span key={loan.id} className="badge badge-info" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', fontWeight: 600 }}>
+                      🏦 ঋণ {toBengaliNumber(loan.loan_no)}: {summary.repayment_progress}% পরিশোধিত ({summary.remaining_loan <= 0 ? 'Closed' : `অবশিষ্ট ৳${summary.remaining_loan.toLocaleString()}`})
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Loan Amount & Savings Initial */}
             <div className={styles.grid}>

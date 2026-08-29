@@ -29,6 +29,8 @@ import {
   updateLoanStatus
 } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
+import { PassbookSkeleton } from '@/components/PassbookSkeleton';
+import { ExistingLoansAlertModal, ExistingLoanSummary } from '@/components/ExistingLoansAlertModal';
 
 interface DedicatedLoanPageProps {
   params: Promise<{ id: string; loanId: string }>;
@@ -58,10 +60,26 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewLoanModalOpen, setIsNewLoanModalOpen] = useState(false);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [loanSummaries, setLoanSummaries] = useState<ExistingLoanSummary[]>([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [updatedSuccessMember, setUpdatedSuccessMember] = useState<Member | null>(null);
   const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleOpenNewLoanClick = async () => {
+    if (member && loans.length > 0) {
+      const list: ExistingLoanSummary[] = [];
+      for (const l of loans) {
+        const { summary } = await getCalculatedLedgerForLoan(member, l);
+        list.push({ loan: l, summary });
+      }
+      setLoanSummaries(list);
+      setIsAlertModalOpen(true);
+    } else {
+      setIsNewLoanModalOpen(true);
+    }
+  };
 
   const loadData = async (targetLoanId?: string, isInitial: boolean = false) => {
     if (isInitial) setLoading(true);
@@ -160,8 +178,8 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
       <>
         <Navbar lang={lang} onToggleLang={() => setLang((l) => (l === 'bn' ? 'en' : 'bn'))} />
         <main className="main-content">
-          <div className="container" style={{ textAlign: 'center', padding: '4rem' }}>
-            <p>লোড হচ্ছে...</p>
+          <div className="container">
+            <PassbookSkeleton />
           </div>
         </main>
       </>
@@ -209,7 +227,7 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
               </button>
 
               <button
-                onClick={() => setIsNewLoanModalOpen(true)}
+                onClick={handleOpenNewLoanClick}
                 className="btn btn-secondary btn-sm"
                 style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
               >
@@ -250,7 +268,7 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
             activeLoan={activeLoan}
             lang={lang}
             onSelectLoan={handleSelectLoan}
-            onOpenNewLoanModal={() => setIsNewLoanModalOpen(true)}
+            onOpenNewLoanModal={handleOpenNewLoanClick}
             onToggleLoanStatus={handleToggleLoanStatus}
             onEdit={() => setIsEditModalOpen(true)}
             onPrint={handlePrint}
@@ -269,6 +287,21 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
         </div>
       </main>
 
+      {/* Existing Loans Progress Alert Modal */}
+      {member && (
+        <ExistingLoansAlertModal
+          isOpen={isAlertModalOpen}
+          member={member}
+          loanSummaries={loanSummaries}
+          onClose={() => setIsAlertModalOpen(false)}
+          onProceedToNewLoan={() => {
+            setIsAlertModalOpen(false);
+            setIsNewLoanModalOpen(true);
+          }}
+          lang={lang}
+        />
+      )}
+
       {/* Transaction Modal */}
       <TransactionModal
         isOpen={isTxModalOpen}
@@ -283,6 +316,7 @@ export default function DedicatedLoanPassbookPage({ params }: DedicatedLoanPageP
       <LoanFormModal
         isOpen={isNewLoanModalOpen}
         member={member}
+        existingLoanSummaries={loanSummaries}
         onClose={() => setIsNewLoanModalOpen(false)}
         onSave={handleCreateNewLoan}
         lang={lang}

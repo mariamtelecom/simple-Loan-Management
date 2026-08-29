@@ -1,4 +1,4 @@
-import { Member, Transaction, Loan, LedgerRowCalculation, FinancialSummary } from './types';
+import { Member, Transaction, Loan, LedgerRowCalculation, FinancialSummary, EnrichedTransaction } from './types';
 import { 
   supabasePrimary, 
   isPrimaryConfigured 
@@ -528,6 +528,90 @@ export async function getTransactionsForMember(memberId: string): Promise<Transa
   return finalTransactions.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
+export async function getAllRecentTransactions(): Promise<EnrichedTransaction[]> {
+  const members = await getMembers();
+  const memberMap = new Map<string, Member>();
+  members.forEach(m => {
+    if (m.id) memberMap.set(m.id, m);
+    if (m.member_no) memberMap.set(m.member_no, m);
+  });
+
+  const rawTxs: Transaction[] = [];
+  const seenKeys = new Set<string>();
+
+  function addTx(t: Transaction) {
+    if (!t) return;
+    const dateStr = t.date ? t.date.split('T')[0] : '';
+    const instNo = t.installment_no ?? 'null';
+    const dep = Number(t.savings_deposit || 0);
+    const withd = Number(t.savings_withdraw || 0);
+    const rep = Number(t.loan_repayment || 0);
+    const key = t.id ? `id:${t.id}` : `content:${t.member_id}_${dateStr}_inst:${instNo}_dep:${dep}_wth:${withd}_rep:${rep}`;
+
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      rawTxs.push(t);
+    }
+  }
+
+  // 1. Fetch from Primary Supabase DB
+  if (isPrimaryConfigured && supabasePrimary) {
+    try {
+      const { data, error } = await supabasePrimary
+        .from('transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        data.forEach((t: Transaction) => addTx(t));
+      }
+    } catch (e) {
+      console.warn('Primary Supabase fetch all transactions failed', e);
+    }
+  }
+
+  // 2. Fetch from Local Storage Backup
+  initializeLocalStorage();
+  const raw = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_TRANSACTIONS_KEY) : null;
+  const allLocal: Transaction[] = raw ? JSON.parse(raw) : SEED_TRANSACTIONS;
+  allLocal.forEach((t: Transaction) => addTx(t));
+
+  // Build EnrichedTransaction array
+  const loanCache = new Map<string, Loan[]>();
+  const enriched: EnrichedTransaction[] = [];
+
+  for (const t of rawTxs) {
+    const member = memberMap.get(t.member_id) || null;
+    let loanNo = 1;
+
+    if (member) {
+      if (!loanCache.has(member.id)) {
+        const mLoans = await getLoansForMember(member.id);
+        loanCache.set(member.id, mLoans);
+      }
+      const mLoans = loanCache.get(member.id) || [];
+      if (t.loan_id) {
+        const found = mLoans.find(l => l.id === t.loan_id || String(l.loan_no) === String(t.loan_id));
+        if (found) loanNo = found.loan_no;
+      }
+    }
+
+    enriched.push({
+      ...t,
+      memberName: member ? member.name : 'অজানা সদস্য',
+      memberNo: member ? member.member_no : t.member_id,
+      bookNo: member?.book_no || '১',
+      loanNo
+    });
+  }
+
+  // Sort by timestamp/date descending (latest transactions first!)
+  return enriched.sort((a, b) => {
+    const timeA = new Date(a.created_at || a.date).getTime();
+    const timeB = new Date(b.created_at || b.date).getTime();
+    return timeB - timeA;
+  });
+}
+
 // ----------------------------------------------------------------------
 // LOANS API & MULTI-LOAN FUNCTIONS
 // ----------------------------------------------------------------------
@@ -734,23 +818,23 @@ export async function getCalculatedLedgerForLoan(member: Member, loan: Loan): Pr
   let currentLoanBalance = Number(loan.loan_amount || 0);
   let totalLoanPaid = 0;
 
-  // Calculate cumulative savings across all member transactions
-  let runningSavingsAcrossMember = Number(member.savings_initial || 0);
-  const memberSavingsMap = new Map<string, number>();
-
-  allTxs.forEach((t) => {
-    runningSavingsAcrossMember += Number(t.savings_deposit || 0) - Number(t.savings_withdraw || 0);
-    memberSavingsMap.set(t.id, runningSavingsAcrossMember);
-  });
+  // Calculate cumulative savings balance for THIS loan specifically
+  // Loan 1 starts with member.savings_initial. Loan 2, 3, 4... start with 0.
+  const isFirstLoan = loan.loan_no === 1 || loan.id === member.id;
+  let runningLoanSavings = isFirstLoan ? Number(member.savings_initial || 0) : 0;
 
   const rows: LedgerRowCalculation[] = loanTxs.map((t) => {
     const repayment = Number(t.loan_repayment || 0);
     currentLoanBalance = Math.max(0, currentLoanBalance - repayment);
     totalLoanPaid += repayment;
 
+    const deposit = Number(t.savings_deposit || 0);
+    const withdraw = Number(t.savings_withdraw || 0);
+    runningLoanSavings += deposit - withdraw;
+
     return {
       ...t,
-      running_total_savings: memberSavingsMap.get(t.id) ?? runningSavingsAcrossMember,
+      running_total_savings: runningLoanSavings,
       running_loan_balance: currentLoanBalance
     };
   });
@@ -759,7 +843,7 @@ export async function getCalculatedLedgerForLoan(member: Member, loan: Loan): Pr
     total_loan: Number(loan.loan_amount || 0),
     total_repaid: totalLoanPaid,
     remaining_loan: currentLoanBalance,
-    total_savings: runningSavingsAcrossMember,
+    total_savings: runningLoanSavings,
     repayment_progress: Number(loan.loan_amount) > 0
       ? Math.min(100, Math.round((totalLoanPaid / Number(loan.loan_amount)) * 100))
       : 100
@@ -777,23 +861,24 @@ export async function getMemberTotalSummary(member: Member): Promise<{
 }> {
   const loans = await getLoansForMember(member.id);
   let totalRemaining = 0;
+  let totalSavings = 0;
   let completedCount = 0;
   let activeCount = 0;
 
   for (const loan of loans) {
     const { summary } = await getCalculatedLedgerForLoan(member, loan);
     totalRemaining += summary.remaining_loan;
+    totalSavings += summary.total_savings;
     if (summary.remaining_loan <= 0 && summary.total_loan > 0) {
       completedCount++;
     } else {
       activeCount++;
     }
   }
-  const { summary: defaultSummary } = await getCalculatedLedger(member);
 
   return {
     total_remaining_loan: totalRemaining,
-    total_savings: defaultSummary.total_savings,
+    total_savings: totalSavings,
     loan_count: loans.length,
     completed_loan_count: completedCount,
     active_loan_count: activeCount
@@ -959,9 +1044,8 @@ export async function getDashboardStats(): Promise<{
       totalGranted += summary.total_loan;
       totalCollected += summary.total_repaid;
       totalRemaining += summary.remaining_loan;
+      totalSavings += summary.total_savings;
     }
-    const { summary: defaultSummary } = await getCalculatedLedger(member);
-    totalSavings += defaultSummary.total_savings;
   }
 
   return {

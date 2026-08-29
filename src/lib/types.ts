@@ -70,3 +70,10 @@ export interface FinancialSummary {
   repayment_progress: number;
 }
 
+export interface EnrichedTransaction extends Transaction {
+  memberName: string;
+  memberNo: string;
+  bookNo?: string;
+  loanNo: number;
+}
+
