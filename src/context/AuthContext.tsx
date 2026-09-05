@@ -33,6 +33,18 @@ const AuthContext = createContext<AuthContextType>({
   requestLogoutConfirmation: () => {}
 });
 
+const DEFAULT_ALLOWED_EMAILS = ['mariamtelecom7011@gmail.com'];
+
+export function isEmailAllowed(email?: string | null): boolean {
+  if (!email) return false;
+  const envEmails = process.env.NEXT_PUBLIC_ALLOWED_EMAILS;
+  const allowedList = envEmails 
+    ? envEmails.split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+    : DEFAULT_ALLOWED_EMAILS;
+  
+  return allowedList.includes(email.trim().toLowerCase());
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,8 +59,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   } | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser && !isEmailAllowed(currentUser.email)) {
+        console.warn(`Unauthorized login attempt detected for ${currentUser.email}. Logging out.`);
+        await logoutFirebase();
+        setUser(null);
+      } else {
+        setUser(currentUser);
+      }
       setLoading(false);
     });
 
@@ -60,6 +78,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const loggedUser = await signInWithGoogle();
       if (loggedUser) {
+        if (!isEmailAllowed(loggedUser.email)) {
+          await logoutFirebase();
+          setUser(null);
+          const err = new Error('UNAUTHORIZED_EMAIL');
+          (err as any).code = 'auth/unauthorized-email';
+          throw err;
+        }
+
         setModalState({
           isOpen: true,
           type: 'login_success',
@@ -79,8 +105,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithEmail = async (email: string, pass: string) => {
     setLoading(true);
     try {
+      if (!isEmailAllowed(email)) {
+        const err = new Error('UNAUTHORIZED_EMAIL');
+        (err as any).code = 'auth/unauthorized-email';
+        throw err;
+      }
+
       const loggedUser = await signInWithEmail(email, pass);
       if (loggedUser) {
+        if (!isEmailAllowed(loggedUser.email)) {
+          await logoutFirebase();
+          setUser(null);
+          const err = new Error('UNAUTHORIZED_EMAIL');
+          (err as any).code = 'auth/unauthorized-email';
+          throw err;
+        }
+
         setModalState({
           isOpen: true,
           type: 'login_success',
@@ -100,8 +140,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const registerWithEmail = async (email: string, pass: string) => {
     setLoading(true);
     try {
+      if (!isEmailAllowed(email)) {
+        const err = new Error('UNAUTHORIZED_EMAIL');
+        (err as any).code = 'auth/unauthorized-email';
+        throw err;
+      }
+
       const newUser = await signUpWithEmail(email, pass);
       if (newUser) {
+        if (!isEmailAllowed(newUser.email)) {
+          await logoutFirebase();
+          setUser(null);
+          const err = new Error('UNAUTHORIZED_EMAIL');
+          (err as any).code = 'auth/unauthorized-email';
+          throw err;
+        }
+
         setModalState({
           isOpen: true,
           type: 'register_success',
@@ -117,6 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   };
+
 
   const logout = async () => {
     setLoading(true);

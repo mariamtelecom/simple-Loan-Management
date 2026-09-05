@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSearchChange
 }) => {
   const t = translations[lang];
-  const { requestLogoutConfirmation } = useAuth();
+  const { user, requestLogoutConfirmation } = useAuth();
 
   const dbBadgeLabel = isPrimaryConfigured ? t.dbModeSupabase : t.dbModeLocal;
 
@@ -50,6 +50,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Controls */}
           <div className={styles.rightGroup}>
+            {/* Authenticated User Security Badge */}
+            {user?.email && (
+              <div 
+                className={styles.dbBadge} 
+                title={`অনুমোদিত এডমিন: ${user.email}`}
+                style={{ background: 'rgba(16, 185, 129, 0.12)', borderColor: 'rgba(16, 185, 129, 0.35)', color: '#10b981' }}
+              >
+                <ShieldCheck size={14} style={{ color: '#10b981' }} />
+                <span className={styles.btnLabel} style={{ fontWeight: 600, fontSize: '0.78rem' }}>{user.email}</span>
+              </div>
+            )}
+
             {/* Supabase Sync Status Badge */}
             <div className={styles.dbBadge} title="Supabase Cloud DB + Local Backup">
               <ShieldCheck size={13} style={{ color: 'var(--primary)' }} />
