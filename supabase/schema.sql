@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS public.transactions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Migration for existing Supabase databases:
+-- Migration for existing Supabase databases :
 -- ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS loan_id UUID REFERENCES public.loans(id) ON DELETE CASCADE;
 
 -- Index for ordering transactions per member
