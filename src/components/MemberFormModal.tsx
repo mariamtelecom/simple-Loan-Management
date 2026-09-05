@@ -590,7 +590,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 {/* SECTION 4: LOAN & SAVINGS INFO */}
                 <div className={styles.sectionDivider}>
                   <h4 className={styles.sectionTitle}>
-                    <DollarSign size={18} />
+                    <img src="/taka.png" alt="৳" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
                     <span>ঋণ ও সঞ্চয়ের হিসাব (Loan & Savings Information)</span>
                   </h4>
                 </div>

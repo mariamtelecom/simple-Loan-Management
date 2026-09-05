@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
+    "@tanstack/react-query": "^5.102.8",
     "firebase": "^12.18.0",
     "googleapis": "^176.0.0",
     "lucide-react": "^1.33.0",

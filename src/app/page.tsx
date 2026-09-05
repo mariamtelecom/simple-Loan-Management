@@ -26,15 +26,16 @@ import { SuccessModal } from '@/components/SuccessModal';
 import { DeleteMemberModal } from '@/components/DeleteMemberModal';
 import { DeleteSuccessModal } from '@/components/DeleteSuccessModal';
 import { DeleteAllDataModal } from '@/components/DeleteAllDataModal';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Member } from '@/lib/types';
-import { getMembers, createMember, deleteMember, deleteAllData, getCalculatedLedger, getMemberTotalSummary, getDashboardStats } from '@/lib/db';
+import { getDashboardDataBatch, createMember, deleteMember, deleteAllData } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 
 export default function DashboardPage() {
+  const queryClient = useQueryClient();
   const [lang, setLang] = useState<Language>('bn');
   const t = translations[lang];
 
-  const [members, setMembers] = useState<Member[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
@@ -42,52 +43,25 @@ export default function DashboardPage() {
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
   const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
 
-  const [stats, setStats] = useState({
+  const { data: dashboardData } = useQuery({
+    queryKey: ['dashboard-data'],
+    queryFn: getDashboardDataBatch,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const members = dashboardData?.members || [];
+  const stats = dashboardData?.stats || {
     totalGranted: 0,
     totalCollected: 0,
     totalRemaining: 0,
     totalSavings: 0,
     activeCount: 0
-  });
-
-  const [memberSummaries, setMemberSummaries] = useState<{
-    [id: string]: { 
-      remaining: number; 
-      savings: number; 
-      loanCount: number;
-      completedLoanCount: number;
-      activeLoanCount: number;
-    };
-  }>({});
-
-  const loadData = async () => {
-    const list = await getMembers();
-    setMembers(list);
-
-    const dbStats = await getDashboardStats();
-    setStats(dbStats);
-
-    const summariesMap: { [id: string]: { remaining: number; savings: number; loanCount: number; completedLoanCount: number; activeLoanCount: number } } = {};
-    for (const m of list) {
-      const { total_remaining_loan, total_savings, loan_count, completed_loan_count, active_loan_count } = await getMemberTotalSummary(m);
-      summariesMap[m.id] = {
-        remaining: total_remaining_loan,
-        savings: total_savings,
-        loanCount: loan_count,
-        completedLoanCount: completed_loan_count,
-        activeLoanCount: active_loan_count
-      };
-    }
-    setMemberSummaries(summariesMap);
   };
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const memberSummaries = dashboardData?.memberSummaries || {};
 
   const handleCreateMember = async (data: Omit<Member, 'id' | 'created_at'>) => {
     const newM = await createMember(data);
-    await loadData();
+    queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
     setCreatedSuccessMember(newM);
   };
 
@@ -96,14 +70,14 @@ export default function DashboardPage() {
     const name = targetMember?.name || '';
     const memberNo = targetMember?.member_no || '';
     await deleteMember(id);
-    await loadData();
+    queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
     setDeletingMember(null);
     setDeletedSuccessInfo({ name, memberNo });
   };
 
   const handleConfirmDeleteAll = async () => {
     await deleteAllData();
-    await loadData();
+    queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
     setIsDeleteAllModalOpen(false);
   };
 
@@ -164,7 +138,7 @@ export default function DashboardPage() {
             <div className={styles.statCard}>
               <div className={styles.statHeader}>
                 <span>{t.totalGrantedLoan}</span>
-                <DollarSign size={18} style={{ color: 'var(--accent-amber)' }} />
+                <img src="/taka.png" alt="৳" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
               </div>
               <div className={styles.statVal}>
                 ৳ {stats.totalGranted.toLocaleString()}
@@ -186,7 +160,7 @@ export default function DashboardPage() {
             <div className={styles.statCard}>
               <div className={styles.statHeader}>
                 <span>{t.remainingLoanBalance}</span>
-                <DollarSign size={18} style={{ color: 'var(--accent-rose)' }} />
+                <img src="/taka.png" alt="৳" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
               </div>
               <div className="textRose" style={{ fontSize: '1.35rem', fontWeight: 800 }}>
                 ৳ {stats.totalRemaining.toLocaleString()}

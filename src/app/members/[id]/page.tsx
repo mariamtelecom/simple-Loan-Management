@@ -15,10 +15,10 @@ import { LoanFormModal } from '@/components/LoanFormModal';
 import { DeleteMemberModal } from '@/components/DeleteMemberModal';
 import { SuccessModal } from '@/components/SuccessModal';
 import { DeleteSuccessModal } from '@/components/DeleteSuccessModal';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Member, Loan, LedgerRowCalculation, FinancialSummary, Transaction } from '@/lib/types';
 import { 
-  getMemberById, 
-  getLoansForMember,
+  getMemberPassbookDataBatch,
   getCalculatedLedgerForLoan, 
   addTransaction, 
   deleteTransaction, 
@@ -39,22 +39,12 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const resolvedParams = use(params);
   const memberId = resolvedParams.id;
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [lang, setLang] = useState<Language>('bn');
   const t = translations[lang];
 
-  const [member, setMember] = useState<Member | null>(null);
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [activeLoan, setActiveLoan] = useState<Loan | null>(null);
-  const [ledgerRows, setLedgerRows] = useState<LedgerRowCalculation[]>([]);
-  const [financialSummary, setFinancialSummary] = useState<FinancialSummary>({
-    total_loan: 0,
-    total_repaid: 0,
-    remaining_loan: 0,
-    total_savings: 0,
-    repayment_progress: 0
-  });
-
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewLoanModalOpen, setIsNewLoanModalOpen] = useState(false);
@@ -63,15 +53,38 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [updatedSuccessMember, setUpdatedSuccessMember] = useState<Member | null>(null);
   const [deletedSuccessInfo, setDeletedSuccessInfo] = useState<{ name: string; memberNo?: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const { data: passbookData, isLoading: loading } = useQuery({
+    queryKey: ['member-passbook', memberId],
+    queryFn: () => getMemberPassbookDataBatch(memberId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const member = passbookData?.member || null;
+  const loans = passbookData?.loans || [];
+  const batchSummaries = passbookData?.loanSummaries || [];
+
+  const activeLoan = loans.find(l => l.id === selectedLoanId || String(l.loan_no) === String(selectedLoanId)) || loans[0] || null;
+  const currentLoanSummary = batchSummaries.find(s => s.loan.id === activeLoan?.id || String(s.loan.loan_no) === String(activeLoan?.loan_no));
+  
+  const ledgerRows: LedgerRowCalculation[] = currentLoanSummary?.rows || [];
+  const financialSummary: FinancialSummary = currentLoanSummary?.summary || {
+    total_loan: 0,
+    total_repaid: 0,
+    remaining_loan: 0,
+    total_savings: 0,
+    repayment_progress: 0
+  };
+
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['member-passbook', memberId] });
+    queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
+    queryClient.invalidateQueries({ queryKey: ['transactions-all'] });
+  };
 
   const handleOpenNewLoanClick = async () => {
     if (member && loans.length > 0) {
-      const list: ExistingLoanSummary[] = [];
-      for (const l of loans) {
-        const { summary } = await getCalculatedLedgerForLoan(member, l);
-        list.push({ loan: l, summary });
-      }
+      const list: ExistingLoanSummary[] = batchSummaries.map(s => ({ loan: s.loan, summary: s.summary }));
       setLoanSummaries(list);
       setIsAlertModalOpen(true);
     } else {
@@ -79,41 +92,11 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
     }
   };
 
-  const loadMemberData = async (targetLoanId?: string, isInitial: boolean = false) => {
-    if (isInitial) setLoading(true);
-    const m = await getMemberById(memberId);
-    if (m) {
-      setMember(m);
-      const memberLoans = await getLoansForMember(m.id);
-      setLoans(memberLoans);
-
-      const desiredId = targetLoanId || activeLoan?.id;
-      const currentL = memberLoans.find(l => l.id === desiredId || String(l.loan_no) === String(desiredId)) || memberLoans[0] || null;
-      setActiveLoan(currentL);
-
-      if (currentL) {
-        const { rows, summary } = await getCalculatedLedgerForLoan(m, currentL);
-        setLedgerRows(rows);
-        setFinancialSummary(summary);
-      }
-    }
-    if (isInitial) setLoading(false);
-  };
-
-  useEffect(() => {
-    loadMemberData(undefined, true);
-  }, [memberId]);
-
-  const handleSelectLoan = async (selectedLoanId: string) => {
-    const selectedLoan = loans.find(l => l.id === selectedLoanId || String(l.loan_no) === String(selectedLoanId));
-    if (selectedLoan && member) {
-      setActiveLoan(selectedLoan);
-      const { rows, summary } = await getCalculatedLedgerForLoan(member, selectedLoan);
-      setLedgerRows(rows);
-      setFinancialSummary(summary);
-      if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', `/members/${memberId}/loans/${selectedLoan.id}`);
-      }
+  const handleSelectLoan = (selectedId: string) => {
+    setSelectedLoanId(selectedId);
+    const selectedLoan = loans.find(l => l.id === selectedId || String(l.loan_no) === String(selectedId));
+    if (selectedLoan && typeof window !== 'undefined') {
+      window.history.replaceState({}, '', `/members/${memberId}/loans/${selectedLoan.id}`);
     }
   };
 
@@ -122,20 +105,20 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
       ...txData,
       loan_id: activeLoan?.id
     });
-    await loadMemberData(activeLoan?.id);
+    invalidateQueries();
   };
 
   const handleDeleteTx = async (txId: string) => {
     if (confirm('আপনি কি নিশ্চিত যে এই লেনদেনটি মুছে ফেলতে চান?')) {
       await deleteTransaction(txId);
-      await loadMemberData(activeLoan?.id);
+      invalidateQueries();
     }
   };
 
   const handleUpdateMember = async (updatedData: Omit<Member, 'id' | 'created_at'>) => {
     if (!member) return;
     const updated = await updateMember(member.id, updatedData);
-    await loadMemberData(activeLoan?.id);
+    invalidateQueries();
     if (updated) {
       setUpdatedSuccessMember(updated);
     }
@@ -144,7 +127,8 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const handleCreateNewLoan = async (loanData: Omit<Loan, 'id' | 'created_at'>, initialSavings: number) => {
     const newL = await createLoan(loanData, initialSavings);
     setIsNewLoanModalOpen(false);
-    await loadMemberData(newL.id);
+    setSelectedLoanId(newL.id);
+    invalidateQueries();
     if (typeof window !== 'undefined') {
       window.history.replaceState({}, '', `/members/${memberId}/loans/${newL.id}`);
     }
@@ -153,13 +137,14 @@ export default function MemberPassbookPage({ params }: MemberPageProps) {
   const handleToggleLoanStatus = async (lId: string, currentStatus?: 'active' | 'closed') => {
     const nextStatus = currentStatus === 'closed' ? 'active' : 'closed';
     await updateLoanStatus(memberId, lId, nextStatus);
-    await loadMemberData(lId);
+    invalidateQueries();
   };
 
   const handleConfirmDeleteMember = async (id: string) => {
     const name = member?.name || '';
     const memberNo = member?.member_no || '';
     await deleteMember(id);
+    invalidateQueries();
     setIsDeleteModalOpen(false);
     setDeletedSuccessInfo({ name, memberNo });
   };

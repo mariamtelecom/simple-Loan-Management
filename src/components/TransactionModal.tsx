@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, PlusCircle } from 'lucide-react';
+import { X, PlusCircle, AlertCircle } from 'lucide-react';
 import styles from './TransactionModal.module.css';
 import { Transaction } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
@@ -40,14 +40,31 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [savingsWithdraw, setSavingsWithdraw] = useState('');
   const [installmentNo, setInstallmentNo] = useState('');
   const [loanRepayment, setLoanRepayment] = useState('');
-  const [collectorSignature, setCollectorSignature] = useState('জসিম');
+  const [collectorSignature, setCollectorSignature] = useState('মেহেদুল');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const dep = Number(savingsDeposit || 0);
+    const wth = Number(savingsWithdraw || 0);
+    const rep = Number(loanRepayment || 0);
+
+    // Require at least one amount field to be non-zero
+    if (dep <= 0 && wth <= 0 && rep <= 0) {
+      setErrorMsg(
+        lang === 'bn'
+          ? 'কমপক্ষে একটি ঘরে (জমা, উত্তোলন বা আদায়) টাকার পরিমাণ বসান'
+          : 'Please enter an amount in at least one field (Deposit, Withdraw, or Collection)'
+      );
+      return;
+    }
+
+    setErrorMsg('');
 
     // Format ISO/Readable DateTime String (e.g., 2026-08-29 01:04 PM)
     const dt = new Date(date);
@@ -61,10 +78,10 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         member_id: memberId,
         loan_id: loanId,
         date: dateFormatted,
-        savings_deposit: Number(savingsDeposit || 0),
-        savings_withdraw: Number(savingsWithdraw || 0),
+        savings_deposit: dep,
+        savings_withdraw: wth,
         installment_no: installmentNo ? Number(installmentNo) : null,
-        loan_repayment: Number(loanRepayment || 0),
+        loan_repayment: rep,
         collector_signature: collectorSignature,
         notes
       });
@@ -88,6 +105,28 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
         <form onSubmit={handleSubmit}>
           <div className={styles.form}>
+            {/* Validation Error Banner */}
+            {errorMsg && (
+              <div
+                style={{
+                  padding: '0.65rem 0.85rem',
+                  marginBottom: '0.5rem',
+                  background: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '8px',
+                  color: '#dc2626',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             {/* Date & Time */}
             <div className={styles.field}>
               <label className={styles.label}>{t.date} (তারিখ ও সময়) *</label>
@@ -100,7 +139,6 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               />
             </div>
 
-
             {/* Savings Deposit & Withdraw */}
             <div className={styles.grid}>
               <div className={styles.field}>
@@ -109,9 +147,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   type="number"
                   min="0"
                   className={styles.input}
-                  placeholder="e.g. 500"
+                  placeholder={t.enterAmount || "টাকার পরিমাণ বসান"}
                   value={savingsDeposit}
-                  onChange={(e) => setSavingsDeposit(e.target.value)}
+                  onChange={(e) => {
+                    setSavingsDeposit(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
                 />
               </div>
 
@@ -121,9 +162,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   type="number"
                   min="0"
                   className={styles.input}
-                  placeholder="e.g. 1000"
+                  placeholder={t.enterAmount || "টাকার পরিমাণ বসান"}
                   value={savingsWithdraw}
-                  onChange={(e) => setSavingsWithdraw(e.target.value)}
+                  onChange={(e) => {
+                    setSavingsWithdraw(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
                 />
               </div>
             </div>
@@ -136,7 +180,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   type="number"
                   min="1"
                   className={styles.input}
-                  placeholder="e.g. 1"
+                  placeholder={t.enterInstallmentNo || "কিস্তি নম্বর"}
                   value={installmentNo}
                   onChange={(e) => setInstallmentNo(e.target.value)}
                 />
@@ -148,9 +192,12 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   type="number"
                   min="0"
                   className={styles.input}
-                  placeholder="e.g. 3000"
+                  placeholder={t.enterAmount || "টাকার পরিমাণ বসান"}
                   value={loanRepayment}
-                  onChange={(e) => setLoanRepayment(e.target.value)}
+                  onChange={(e) => {
+                    setLoanRepayment(e.target.value);
+                    if (errorMsg) setErrorMsg('');
+                  }}
                 />
               </div>
             </div>
@@ -161,7 +208,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <input
                 type="text"
                 className={styles.input}
-                placeholder="e.g. জসিম / Collector Name"
+                placeholder="e.g. মেহেদুল / Collector Name"
                 value={collectorSignature}
                 onChange={(e) => setCollectorSignature(e.target.value)}
               />

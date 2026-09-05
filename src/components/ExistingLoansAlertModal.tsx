@@ -90,12 +90,12 @@ export const ExistingLoansAlertModal: React.FC<ExistingLoansAlertModalProps> = (
                     </span>
 
                     {isClosed ? (
-                      <span className="badge" style={{ backgroundColor: '#dcfce7', color: '#166534', fontWeight: 700, border: '1px solid #86efac' }}>
-                        ✅ সম্পূর্ণ পরিশোধিত (Closed)
+                      <span className="badge" style={{ backgroundColor: '#fef2f2', color: '#dc2626', fontWeight: 700, border: '1px solid #fca5a5' }}>
+                        🔴 সম্পূর্ণ পরিশোধিত (100% Paid)
                       </span>
                     ) : (
                       <span className="badge badge-success" style={{ fontWeight: 700 }}>
-                        ⚡ চলতি ঋণ (Active)
+                        🟢 চলতি ঋণ (Running)
                       </span>
                     )}
                   </div>

@@ -6,6 +6,7 @@ import { ArrowLeft, Receipt, Printer } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { RecentTransactionsTable } from '@/components/RecentTransactionsTable';
 import { TransactionReceiptModal } from '@/components/TransactionReceiptModal';
+import { useQuery } from '@tanstack/react-query';
 import { EnrichedTransaction } from '@/lib/types';
 import { getAllRecentTransactions } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
@@ -16,20 +17,13 @@ export default function TransactionsPage() {
   const [lang, setLang] = useState<Language>('bn');
   const t = translations[lang];
 
-  const [transactions, setTransactions] = useState<EnrichedTransaction[]>([]);
   const [printingTransaction, setPrintingTransaction] = useState<EnrichedTransaction | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
-    setLoading(true);
-    const list = await getAllRecentTransactions();
-    setTransactions(list);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { data: transactions = [], isLoading: loading } = useQuery({
+    queryKey: ['transactions-all'],
+    queryFn: getAllRecentTransactions,
+    staleTime: 5 * 60 * 1000,
+  });
 
   return (
     <>

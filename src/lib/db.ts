@@ -1,7 +1,7 @@
 import { Member, Transaction, Loan, LedgerRowCalculation, FinancialSummary, EnrichedTransaction } from './types';
-import { 
-  supabasePrimary, 
-  isPrimaryConfigured 
+import {
+  supabasePrimary,
+  isPrimaryConfigured
 } from './supabaseClient';
 
 const LOCAL_STORAGE_MEMBERS_KEY = 'loan_mgmt_members_v4';
@@ -64,45 +64,9 @@ const SEED_TRANSACTIONS: Transaction[] = [
   //   savings_withdraw: 0,
   //   installment_no: null,
   //   loan_repayment: 0,
-  //   collector_signature: 'জসিম',
+  //   collector_signature: 'mariamtelecom',
   //   notes: 'প্রাথমিক সঞ্চয় জমা',
   //   created_at: '2024-06-10T10:00:00Z'
-  // },
-  // {
-  //   id: 't-2',
-  //   member_id: 'm-125',
-  //   date: '2024-06-10',
-  //   savings_deposit: 10000,
-  //   savings_withdraw: 0,
-  //   installment_no: null,
-  //   loan_repayment: 10000,
-  //   collector_signature: 'জসিম',
-  //   notes: 'ঋণ বিতরণের সময় সঞ্চয় ও প্রাথমিক জমা',
-  //   created_at: '2024-06-10T11:00:00Z'
-  // },
-  // {
-  //   id: 't-3',
-  //   member_id: 'm-125',
-  //   date: '2024-07-10',
-  //   savings_deposit: 500,
-  //   savings_withdraw: 0,
-  //   installment_no: 1,
-  //   loan_repayment: 3000,
-  //   collector_signature: 'জসিম',
-  //   notes: 'প্রথম কিস্তি',
-  //   created_at: '2024-07-10T10:00:00Z'
-  // },
-  // {
-  //   id: 't-4',
-  //   member_id: 'm-125',
-  //   date: '2024-08-10',
-  //   savings_deposit: 500,
-  //   savings_withdraw: 2000,
-  //   installment_no: 2,
-  //   loan_repayment: 3000,
-  //   collector_signature: 'জসিম',
-  //   notes: 'দ্বিতীয় কিস্তি ও সঞ্চয় উত্তোলন',
-  //   created_at: '2024-08-10T10:00:00Z'
   // }
 ];
 
@@ -294,9 +258,9 @@ export async function getMemberById(id: string): Promise<Member | null> {
   const members = await getMembers();
   if (!id) return null;
   const normIdNo = parseNumeral(id);
-  return members.find(m => 
-    m.id === id || 
-    m.member_no === id || 
+  return members.find(m =>
+    m.id === id ||
+    m.member_no === id ||
     (normIdNo > 0 && parseNumeral(m.member_no) === normIdNo)
   ) || null;
 }
@@ -555,14 +519,18 @@ export async function getAllRecentTransactions(): Promise<EnrichedTransaction[]>
   }
 
   // 1. Fetch from Primary Supabase DB
+  let dbLoans: Loan[] = [];
   if (isPrimaryConfigured && supabasePrimary) {
     try {
-      const { data, error } = await supabasePrimary
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (!error && data) {
-        data.forEach((t: Transaction) => addTx(t));
+      const [txRes, loanRes] = await Promise.all([
+        supabasePrimary.from('transactions').select('*').order('created_at', { ascending: false }),
+        supabasePrimary.from('loans').select('*')
+      ]);
+      if (!txRes.error && txRes.data) {
+        txRes.data.forEach((t: Transaction) => addTx(t));
+      }
+      if (!loanRes.error && loanRes.data) {
+        dbLoans = loanRes.data;
       }
     } catch (e) {
       console.warn('Primary Supabase fetch all transactions failed', e);
@@ -575,8 +543,20 @@ export async function getAllRecentTransactions(): Promise<EnrichedTransaction[]>
   const allLocal: Transaction[] = raw ? JSON.parse(raw) : SEED_TRANSACTIONS;
   allLocal.forEach((t: Transaction) => addTx(t));
 
+  const rawLoansLocal = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_LOANS_KEY) : null;
+  const localLoans: Loan[] = rawLoansLocal ? JSON.parse(rawLoansLocal) : [];
+
+  const loansByMemberMap = new Map<string, Loan[]>();
+  function addLoanToMap(l: Loan) {
+    if (!l || !l.member_id) return;
+    const mId = l.member_id;
+    if (!loansByMemberMap.has(mId)) loansByMemberMap.set(mId, []);
+    loansByMemberMap.get(mId)!.push(l);
+  }
+  dbLoans.forEach(addLoanToMap);
+  localLoans.forEach(addLoanToMap);
+
   // Build EnrichedTransaction array
-  const loanCache = new Map<string, Loan[]>();
   const enriched: EnrichedTransaction[] = [];
 
   for (const t of rawTxs) {
@@ -584,11 +564,7 @@ export async function getAllRecentTransactions(): Promise<EnrichedTransaction[]>
     let loanNo = 1;
 
     if (member) {
-      if (!loanCache.has(member.id)) {
-        const mLoans = await getLoansForMember(member.id);
-        loanCache.set(member.id, mLoans);
-      }
-      const mLoans = loanCache.get(member.id) || [];
+      const mLoans = loansByMemberMap.get(member.id) || [];
       if (t.loan_id) {
         const found = mLoans.find(l => l.id === t.loan_id || String(l.loan_no) === String(t.loan_id));
         if (found) loanNo = found.loan_no;
@@ -692,8 +668,8 @@ export async function getLoanById(memberId: string, loanId: string): Promise<Loa
   if (!loanId || loanId === 'default') {
     return loans[0] || null;
   }
-  const matched = loans.find(l => 
-    l.id === loanId || 
+  const matched = loans.find(l =>
+    l.id === loanId ||
     String(l.loan_no) === String(loanId) ||
     (loanId === memberId && l.loan_no === 1)
   );
@@ -787,7 +763,7 @@ export async function createLoan(
       savings_withdraw: 0,
       installment_no: null,
       loan_repayment: 0,
-      collector_signature: 'জসিম',
+      collector_signature: 'mariamtelecom',
       notes: `নতুন ঋণ (ঋণ ${newLoan.loan_no}) গ্রহণের সময় সঞ্চয় জমা`
     });
   }
@@ -1055,6 +1031,207 @@ export async function getDashboardStats(): Promise<{
     totalSavings,
     activeCount: members.length
   };
+}
+
+export async function getDashboardDataBatch(): Promise<{
+  members: Member[];
+  stats: {
+    totalGranted: number;
+    totalCollected: number;
+    totalRemaining: number;
+    totalSavings: number;
+    activeCount: number;
+  };
+  memberSummaries: {
+    [id: string]: {
+      remaining: number;
+      savings: number;
+      loanCount: number;
+      completedLoanCount: number;
+      activeLoanCount: number;
+    };
+  };
+}> {
+  const members = await getMembers();
+
+  let dbLoans: Loan[] = [];
+  let dbTxs: Transaction[] = [];
+
+  if (isPrimaryConfigured && supabasePrimary) {
+    try {
+      const [loansRes, txsRes] = await Promise.all([
+        supabasePrimary.from('loans').select('*').order('loan_no', { ascending: true }),
+        supabasePrimary.from('transactions').select('*').order('date', { ascending: true })
+      ]);
+      if (loansRes.data) dbLoans = loansRes.data;
+      if (txsRes.data) dbTxs = txsRes.data;
+    } catch (e) {
+      console.warn('Batch Supabase fetch failed', e);
+    }
+  }
+
+  initializeLocalStorage();
+  const rawLoansLocal = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_LOANS_KEY) : null;
+  const localLoans: Loan[] = rawLoansLocal ? JSON.parse(rawLoansLocal) : [];
+
+  const rawTxsLocal = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_TRANSACTIONS_KEY) : null;
+  const localTxs: Transaction[] = rawTxsLocal ? JSON.parse(rawTxsLocal) : SEED_TRANSACTIONS;
+
+  const txsByMemberMap = new Map<string, Transaction[]>();
+  const seenTxKeys = new Set<string>();
+
+  function addTxToMap(t: Transaction) {
+    if (!t || !t.member_id) return;
+    const dateStr = t.date ? t.date.split('T')[0] : '';
+    const instNo = t.installment_no ?? 'null';
+    const dep = Number(t.savings_deposit || 0);
+    const withd = Number(t.savings_withdraw || 0);
+    const rep = Number(t.loan_repayment || 0);
+    const key = t.id ? `id:${t.id}` : `content:${t.member_id}_${dateStr}_inst:${instNo}_dep:${dep}_wth:${withd}_rep:${rep}`;
+    if (seenTxKeys.has(key)) return;
+    seenTxKeys.add(key);
+
+    const mId = t.member_id;
+    if (!txsByMemberMap.has(mId)) txsByMemberMap.set(mId, []);
+    txsByMemberMap.get(mId)!.push(t);
+  }
+
+  dbTxs.forEach(addTxToMap);
+  localTxs.forEach(addTxToMap);
+
+  const loansByMemberMap = new Map<string, Map<string, Loan>>();
+
+  function addLoanToMap(l: Loan) {
+    if (!l || !l.member_id) return;
+    const mId = l.member_id;
+    if (!loansByMemberMap.has(mId)) loansByMemberMap.set(mId, new Map());
+    const lNo = l.loan_no || 1;
+    loansByMemberMap.get(mId)!.set(`loan_no_${lNo}`, l);
+  }
+
+  dbLoans.forEach(addLoanToMap);
+  localLoans.forEach(addLoanToMap);
+
+  let totalGranted = 0;
+  let totalCollected = 0;
+  let totalRemaining = 0;
+  let totalSavings = 0;
+
+  const memberSummaries: {
+    [id: string]: {
+      remaining: number;
+      savings: number;
+      loanCount: number;
+      completedLoanCount: number;
+      activeLoanCount: number;
+    };
+  } = {};
+
+  for (const member of members) {
+    const mLoansMap = loansByMemberMap.get(member.id) || new Map<string, Loan>();
+    const defaultLoan1: Loan = {
+      id: member.id,
+      member_id: member.id,
+      loan_no: 1,
+      loan_amount: Number(member.loan_amount || 0),
+      loan_purpose: member.loan_purpose || 'সাধারণ ঋণ',
+      total_installments: Number(member.total_installments || 44),
+      admission_date: member.admission_date || new Date().toISOString().split('T')[0],
+      status: member.status || 'active',
+      created_at: member.created_at
+    };
+    if (!mLoansMap.has('loan_no_1')) {
+      mLoansMap.set('loan_no_1', defaultLoan1);
+    }
+
+    const loansList = Array.from(mLoansMap.values());
+
+    const mTxs = [
+      ...(txsByMemberMap.get(member.id) || []),
+      ...(member.member_no ? (txsByMemberMap.get(member.member_no) || []) : [])
+    ];
+
+    let mTotalRemaining = 0;
+    let mTotalSavings = 0;
+    let completedCount = 0;
+    let activeCount = 0;
+
+    for (const loan of loansList) {
+      const loanTxs = mTxs.filter((t) => {
+        if (t.loan_id) {
+          return (
+            t.loan_id === loan.id ||
+            (t.loan_id === member.id && loan.loan_no === 1) ||
+            String(t.loan_id) === String(loan.loan_no)
+          );
+        }
+        return loan.loan_no === 1 || loan.id === member.id;
+      });
+
+      let currentLoanBalance = Number(loan.loan_amount || 0);
+      let totalLoanPaid = 0;
+      const isFirstLoan = loan.loan_no === 1 || loan.id === member.id;
+      let runningLoanSavings = isFirstLoan ? Number(member.savings_initial || 0) : 0;
+
+      for (const t of loanTxs) {
+        const repayment = Number(t.loan_repayment || 0);
+        currentLoanBalance = Math.max(0, currentLoanBalance - repayment);
+        totalLoanPaid += repayment;
+
+        const deposit = Number(t.savings_deposit || 0);
+        const withdraw = Number(t.savings_withdraw || 0);
+        runningLoanSavings += deposit - withdraw;
+      }
+
+      totalGranted += Number(loan.loan_amount || 0);
+      totalCollected += totalLoanPaid;
+      totalRemaining += currentLoanBalance;
+      totalSavings += runningLoanSavings;
+
+      mTotalRemaining += currentLoanBalance;
+      mTotalSavings += runningLoanSavings;
+
+      if (currentLoanBalance <= 0 && Number(loan.loan_amount || 0) > 0) {
+        completedCount++;
+      } else {
+        activeCount++;
+      }
+    }
+
+    memberSummaries[member.id] = {
+      remaining: mTotalRemaining,
+      savings: mTotalSavings,
+      loanCount: loansList.length,
+      completedLoanCount: completedCount,
+      activeLoanCount: activeCount
+    };
+  }
+
+  return {
+    members,
+    stats: {
+      totalGranted,
+      totalCollected,
+      totalRemaining,
+      totalSavings,
+      activeCount: members.length
+    },
+    memberSummaries
+  };
+}
+
+export async function getMemberPassbookDataBatch(memberId: string) {
+  const m = await getMemberById(memberId);
+  if (!m) return null;
+  const memberLoans = await getLoansForMember(m.id);
+  const loanSummaries: { loan: Loan; rows: LedgerRowCalculation[]; summary: FinancialSummary }[] = [];
+
+  for (const l of memberLoans) {
+    const { rows, summary } = await getCalculatedLedgerForLoan(m, l);
+    loanSummaries.push({ loan: l, rows, summary });
+  }
+
+  return { member: m, loans: memberLoans, loanSummaries };
 }
 
 /**

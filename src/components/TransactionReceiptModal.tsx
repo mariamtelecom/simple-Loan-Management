@@ -150,7 +150,7 @@ export const TransactionReceiptModal: React.FC<TransactionReceiptModalProps> = (
             <div className={styles.sigLine}>
               আদায়কারীর স্বাক্ষর
               <br />
-              <strong style={{ color: '#0f172a' }}>({transaction.collector_signature || 'জসিম'})</strong>
+              <strong style={{ color: '#0f172a' }}>({transaction.collector_signature || 'মেহেদুল'})</strong>
             </div>
           </div>
         </div>

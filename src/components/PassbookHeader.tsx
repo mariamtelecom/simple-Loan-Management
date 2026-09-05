@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User, Edit, Printer, Phone, Calendar, Target, Hash, ShieldCheck, CreditCard, X, FileText, MapPin, Folder, Plus, Landmark, CheckCircle, RotateCcw } from 'lucide-react';
 import styles from './PassbookHeader.module.css';
-import { Member, Loan } from '@/lib/types';
+import { Member, Loan, FinancialSummary } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
 import { toBengaliNumber } from '@/lib/db';
 
@@ -9,6 +9,7 @@ interface PassbookHeaderProps {
   member: Member;
   loans?: Loan[];
   activeLoan?: Loan | null;
+  loanSummaries?: { loan: Loan; summary: FinancialSummary }[];
   lang: Language;
   onSelectLoan?: (loanId: string) => void;
   onOpenNewLoanModal?: () => void;
@@ -21,6 +22,7 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   member,
   loans = [],
   activeLoan,
+  loanSummaries = [],
   lang,
   onSelectLoan,
   onOpenNewLoanModal,
@@ -42,11 +44,22 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   const currentTotalInstallments = activeLoan ? activeLoan.total_installments : (member.total_installments || 44);
   const currentAdmissionDate = activeLoan ? activeLoan.admission_date : (member.admission_date || '-');
   const currentLoanNo = activeLoan ? activeLoan.loan_no : 1;
-  const isCurrentLoanClosed = activeLoan?.status === 'closed';
+
+  // Helper to check if a loan is 100% fully paid / completed
+  const checkIsLoanFullyPaid = (l: Loan) => {
+    if (l.status === 'closed') return true;
+    const lSum = loanSummaries.find(s => s.loan.id === l.id || String(s.loan.loan_no) === String(l.loan_no))?.summary;
+    if (lSum) {
+      return (lSum.remaining_loan <= 0 && lSum.total_loan > 0) || lSum.repayment_progress >= 100;
+    }
+    return false;
+  };
+
+  const isCurrentLoanClosed = activeLoan ? checkIsLoanFullyPaid(activeLoan) : false;
 
   // Multi-Loan Summaries Calculation
   const totalLoansCount = loans.length || 1;
-  const completedLoansCount = loans.filter(l => l.status === 'closed').length;
+  const completedLoansCount = loans.filter(checkIsLoanFullyPaid).length;
   const activeLoansCount = Math.max(0, totalLoansCount - completedLoansCount);
 
   return (
@@ -88,17 +101,17 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
                   🟢 {t.activeLoansCount}: {toBengaliNumber(activeLoansCount)}{t.countSuffix || 'টি'}
                 </span>
                 {completedLoansCount > 0 && (
-                  <span className="badge" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', backgroundColor: '#e2e8f0', color: '#334155', fontWeight: 600 }}>
-                    ✅ {t.completedLoansCount}: {toBengaliNumber(completedLoansCount)}{t.countSuffix || 'টি'}
+                  <span className="badge" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', backgroundColor: '#fef2f2', color: '#dc2626', fontWeight: 600, border: '1px solid #fca5a5' }}>
+                    🔴 {t.completedLoansCount}: {toBengaliNumber(completedLoansCount)}{t.countSuffix || 'টি'}
                   </span>
                 )}
                 {isCurrentLoanClosed ? (
-                  <span className="badge" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', backgroundColor: '#dcfce7', color: '#166534', fontWeight: 700, border: '1px solid #86efac' }}>
-                    ✅ ঋণ পরিশোধিত (Closed)
+                  <span className="badge" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', backgroundColor: '#fef2f2', color: '#dc2626', fontWeight: 700, border: '1px solid #fca5a5' }}>
+                    🔴 ১০০% ঋণ পরিশোধিত (Paid Fully)
                   </span>
                 ) : (
                   <span className="badge badge-success" style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem', fontWeight: 700 }}>
-                    ⚡ চলতি ঋণ (Active)
+                    🟢 চলতি ঋণ (Running)
                   </span>
                 )}
               </div>
@@ -112,9 +125,9 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
                 onClick={() => onToggleLoanStatus(activeLoan.id, activeLoan.status)}
                 className={`btn btn-sm ${isCurrentLoanClosed ? 'btn-secondary' : 'btn-primary'}`}
                 style={{
-                  borderColor: isCurrentLoanClosed ? '#10b981' : '#f59e0b',
-                  backgroundColor: isCurrentLoanClosed ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                  color: isCurrentLoanClosed ? '#047857' : '#d97706',
+                  borderColor: isCurrentLoanClosed ? '#10b981' : '#ef4444',
+                  backgroundColor: isCurrentLoanClosed ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                  color: isCurrentLoanClosed ? '#047857' : '#dc2626',
                   fontWeight: 700
                 }}
                 title={isCurrentLoanClosed ? 'ঋণটি পুনরায় সক্রিয় করুন' : 'ঋণটি পরিশোধিত/সমাপ্ত হিসেবে মার্ক করুন'}
@@ -300,18 +313,18 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
 
           {loans.map((l) => {
             const isActive = activeLoan ? (activeLoan.id === l.id || activeLoan.loan_no === l.loan_no) : l.loan_no === 1;
-            const isClosed = l.status === 'closed';
+            const isClosed = checkIsLoanFullyPaid(l);
             return (
               <button
                 key={l.id}
                 onClick={() => onSelectLoan && onSelectLoan(l.id)}
                 className={`${styles.loanTab} ${isActive ? styles.loanTabActive : ''}`}
                 style={{
-                  borderLeft: isClosed ? '3px solid #10b981' : undefined
+                  borderLeft: isClosed ? '4px solid #ef4444' : '4px solid #10b981'
                 }}
-                title={`ঋণ ${l.loan_no} (৳ ${l.loan_amount.toLocaleString()}) - ${isClosed ? 'পরিশোধিত' : 'চলতি'}`}
+                title={`ঋণ ${l.loan_no} (৳ ${l.loan_amount.toLocaleString()}) - ${isClosed ? '১০০% পরিশোধিত (🔴 Paid Fully)' : 'চলতি ঋণ (🟢 Running)'}`}
               >
-                <span>🏦 {t.loanNo} {toBengaliNumber(l.loan_no)} (৳ {l.loan_amount.toLocaleString()}) {isClosed ? '✅' : '🟢'}</span>
+                <span>🏦 {t.loanNo} {toBengaliNumber(l.loan_no)} (৳ {l.loan_amount.toLocaleString()}) {isClosed ? '🔴' : '🟢'}</span>
               </button>
             );
           })}

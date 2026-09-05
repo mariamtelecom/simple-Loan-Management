@@ -45,7 +45,7 @@ export const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
       <div className={styles.summaryCard}>
         <div className={styles.labelRow}>
           <span>{t.remainingLoanBalance}</span>
-          <DollarSign size={18} className={styles.roseText} />
+          <img src="/taka.png" alt="৳" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
         </div>
         <div className={`${styles.amount} ${styles.roseText}`}>
           ৳ {summary.remaining_loan.toLocaleString()}
