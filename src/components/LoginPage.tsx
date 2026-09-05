@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Shield, Lock, Mail, KeyRound, ArrowRight, UserPlus, LogIn } from 'lucide-react';
+import { Shield, Lock, Mail, KeyRound, UserPlus, LogIn, Clock, AlertTriangle } from 'lucide-react';
 import styles from './LoginPage.module.css';
+import { useAuth } from '@/context/AuthContext';
 
 interface LoginPageProps {
   onGoogleLogin: () => Promise<void>;
@@ -15,6 +16,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onEmailLogin, 
   onEmailRegister 
 }) => {
+  const { isBlocked, remainingBlockSeconds, failedAttempts, maxAttempts } = useAuth();
+
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,6 +25,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const formatTimer = (totalSeconds: number): string => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const getBengaliErrorMessage = (errCode: string, defaultMessage: string): string => {
     if (errCode.includes('auth/unauthorized-email')) return 'অনুমতি প্রত্যাখ্যান: শুধুমাত্র mariamtelecom7011@gmail.com এই সিস্টেমে প্রবেশের অনুমোদিত ইমেইল।';
@@ -35,7 +44,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!email || !password || isBlocked) return;
 
     setLoading(true);
     setErrorMsg(null);
@@ -58,6 +67,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   const handleGoogleClick = async () => {
+    if (isBlocked) return;
     setGoogleLoading(true);
     setErrorMsg(null);
     try {
@@ -87,6 +97,63 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           সিস্টেমে প্রবেশ করতে ইমেইল-পাসওয়ার্ড অথবা গুগল একাউন্ট দিয়ে সাইন ইন করুন।
         </p>
 
+        {/* Lockout Warning Banner */}
+        {isBlocked ? (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.25) 100%)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '12px',
+            padding: '0.85rem 1rem',
+            marginBottom: '1.25rem',
+            width: '100%',
+            color: '#f87171',
+            textAlign: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+              <Lock size={16} />
+              <span>লগইন সেবা সাময়িকভাবে ব্লক করা হয়েছে</span>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#fca5a5', margin: '0.25rem 0' }}>
+              পরপর {maxAttempts} বার অননুমোদিত চেষ্টার কারণে আগামী ৩০ মিনিটের জন্য লগইন বন্ধ রয়েছে।
+            </p>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: '#7f1d1d',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '20px',
+              fontFamily: 'monospace',
+              fontWeight: 800,
+              fontSize: '1.1rem',
+              color: '#ffffff',
+              marginTop: '0.4rem'
+            }}>
+              <Clock size={14} style={{ color: '#f87171' }} />
+              <span>{formatTimer(remainingBlockSeconds)}</span>
+            </div>
+          </div>
+        ) : failedAttempts > 0 ? (
+          <div style={{
+            background: 'rgba(217, 119, 6, 0.15)',
+            border: '1px solid rgba(217, 119, 6, 0.3)',
+            color: '#fbbf24',
+            borderRadius: '10px',
+            padding: '0.5rem 0.75rem',
+            fontSize: '0.8rem',
+            marginBottom: '1rem',
+            width: '100%',
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.4rem'
+          }}>
+            <AlertTriangle size={14} />
+            <span>সতর্কতা: অননুমোদিত চেষ্টা ({failedAttempts}/{maxAttempts})। আর {maxAttempts - failedAttempts} টি চেষ্টার পর ওয়েবসাইট ৩০ মিনিটের জন্য ব্লক হবে।</span>
+          </div>
+        ) : null}
+
         {/* Tab switcher: Login / Register */}
         <div className={styles.tabRow}>
           <button
@@ -114,7 +181,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </div>
 
         {/* Banner Feedback Messages */}
-        {errorMsg && (
+        {errorMsg && !isBlocked && (
           <div style={{
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -130,7 +197,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           </div>
         )}
 
-        {successMsg && (
+        {successMsg && !isBlocked && (
           <div style={{
             background: 'rgba(16, 185, 129, 0.15)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -158,6 +225,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               <input
                 type="email"
                 required
+                disabled={isBlocked}
                 placeholder="example@gmail.com"
                 className={styles.input}
                 value={email}
@@ -177,6 +245,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 type="password"
                 required
                 minLength={6}
+                disabled={isBlocked}
                 placeholder="******"
                 className={styles.input}
                 value={password}
@@ -187,10 +256,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           <button
             type="submit"
-            disabled={loading || googleLoading}
+            disabled={loading || googleLoading || isBlocked}
             className={styles.submitBtn}
+            style={isBlocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
           >
-            {loading ? (
+            {isBlocked ? (
+              <span>ব্লক রাখা হয়েছে ({formatTimer(remainingBlockSeconds)})</span>
+            ) : loading ? (
               <span>প্রসেসিং হচ্ছে...</span>
             ) : activeTab === 'login' ? (
               <>
@@ -217,8 +289,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         <button
           type="button"
           onClick={handleGoogleClick}
-          disabled={loading || googleLoading}
+          disabled={loading || googleLoading || isBlocked}
           className={styles.googleBtn}
+          style={isBlocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path
@@ -238,7 +311,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          <span>{googleLoading ? 'গুগলে সাইন ইন হচ্ছে...' : 'Google দিয়ে সাইন ইন করুন'}</span>
+          <span>{isBlocked ? 'ব্লক রাখা হয়েছে' : googleLoading ? 'গুগলে সাইন ইন হচ্ছে...' : 'Google দিয়ে সাইন ইন করুন'}</span>
         </button>
 
         <div className={styles.securityNote}>
@@ -249,3 +322,4 @@ export const LoginPage: React.FC<LoginPageProps> = ({
     </div>
   );
 };
+
