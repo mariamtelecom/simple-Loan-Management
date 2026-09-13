@@ -33,7 +33,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   const getBengaliErrorMessage = (errCode: string, defaultMessage: string): string => {
-    if (errCode.includes('auth/unauthorized-email')) return 'অনুমতি প্রত্যাখ্যান: শুধুমাত্র mariamtelecom7011@gmail.com এই সিস্টেমে প্রবেশের অনুমোদিত ইমেইল।';
+    if (errCode.includes('auth/unauthorized-email')) return 'অনুমতি প্রত্যাখ্যান: আপনার ইমেইল দিয়ে এই সিস্টেমে প্রবেশের অনুমতি দেওয়া নেই।';
     if (errCode.includes('auth/invalid-email')) return 'সঠিক ইমেইল এড্রেস টাইপ করুন।';
     if (errCode.includes('auth/user-not-found') || errCode.includes('auth/invalid-credential')) return 'ইমেইল বা পাসওয়ার্ড সঠিক নয়।';
     if (errCode.includes('auth/wrong-password')) return 'ভুল পাসওয়ার্ড দেওয়া হয়েছে।';
@@ -76,7 +76,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
       console.error('Google login failed:', err);
       const code = err?.code || '';
       if (code === 'auth/unauthorized-email') {
-        setErrorMsg('অনুমতি প্রত্যাখ্যান: শুধুমাত্র mariamtelecom7011@gmail.com দিয়ে লগইন করার অনুমতি দেওয়া আছে।');
+        setErrorMsg('অনুমতি প্রত্যাখ্যান: আপনার ইমেইল দিয়ে লগইন করার অনুমতি দেওয়া নেই।');
       } else if (code !== 'auth/popup-closed-by-user') {
         setErrorMsg('গুগল দিয়ে লগইন সফল হয়নি। আবার চেষ্টা করুন।');
       }
@@ -316,7 +316,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
         <div className={styles.securityNote}>
           <Lock size={12} />
-          <span>🔒 সংরক্ষিত ও সুরক্ষিত এক্সেস (mariamtelecom7011@gmail.com)</span>
+          <span>🔒 সংরক্ষিত ও সুরক্ষিত এক্সেস (অনুমোদিত ডেভলপার ও এডমিন)</span>
         </div>
       </div>
     </div>

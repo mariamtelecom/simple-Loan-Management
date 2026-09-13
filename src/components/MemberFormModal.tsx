@@ -29,6 +29,7 @@ type DocFieldKey =
   | 'photo_url' 
   | 'nid_front_url' 
   | 'nid_back_url' 
+  | 'father_mother_spouse_nid_url'
   | 'guarantor_photo_url'
   | 'guarantor_nid_front_url' 
   | 'guarantor_nid_back_url';
@@ -72,6 +73,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     nid_front_url: '',
     nid_back_url: '',
     nid_image_url: '',
+    father_mother_spouse_nid_url: '',
     guarantor_photo_url: '',
     guarantor_nid_front_url: '',
     guarantor_nid_back_url: '',
@@ -120,6 +122,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           nid_front_url: initialData.nid_front_url || initialData.nid_image_url || '',
           nid_back_url: initialData.nid_back_url || '',
           nid_image_url: initialData.nid_image_url || initialData.nid_front_url || '',
+          father_mother_spouse_nid_url: (initialData as any).father_mother_spouse_nid_url || '',
           guarantor_photo_url: initialData.guarantor_photo_url || '',
           guarantor_nid_front_url: initialData.guarantor_nid_front_url || '',
           guarantor_nid_back_url: initialData.guarantor_nid_back_url || '',
@@ -150,6 +153,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           nid_front_url: '',
           nid_back_url: '',
           nid_image_url: '',
+          father_mother_spouse_nid_url: '',
           guarantor_photo_url: '',
           guarantor_nid_front_url: '',
           guarantor_nid_back_url: '',
@@ -236,6 +240,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         { key: 'photo_url', base64: formData.photo_url },
         { key: 'nid_front_url', base64: formData.nid_front_url || formData.nid_image_url },
         { key: 'nid_back_url', base64: formData.nid_back_url },
+        { key: 'father_mother_spouse_nid_url', base64: formData.father_mother_spouse_nid_url },
         { key: 'guarantor_photo_url', base64: formData.guarantor_photo_url },
         { key: 'guarantor_nid_front_url', base64: formData.guarantor_nid_front_url },
         { key: 'guarantor_nid_back_url', base64: formData.guarantor_nid_back_url }
@@ -252,6 +257,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
       const finalPhotoUrl = formData.photo_url;
       const finalNidFrontUrl = driveResult.urls.nid_front_url || formData.nid_front_url || formData.nid_image_url;
       const finalNidBackUrl = driveResult.urls.nid_back_url || formData.nid_back_url;
+      const finalFatherMotherSpouseNidUrl = driveResult.urls.father_mother_spouse_nid_url || formData.father_mother_spouse_nid_url;
       const finalGuarantorPhotoUrl = driveResult.urls.guarantor_photo_url || formData.guarantor_photo_url;
       const finalGuarantorNidFrontUrl = driveResult.urls.guarantor_nid_front_url || formData.guarantor_nid_front_url;
       const finalGuarantorNidBackUrl = driveResult.urls.guarantor_nid_back_url || formData.guarantor_nid_back_url;
@@ -281,6 +287,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         nid_front_url: finalNidFrontUrl,
         nid_back_url: finalNidBackUrl,
         nid_image_url: finalNidFrontUrl,
+        father_mother_spouse_nid_url: finalFatherMotherSpouseNidUrl,
         guarantor_photo_url: finalGuarantorPhotoUrl,
         guarantor_nid_front_url: finalGuarantorNidFrontUrl,
         guarantor_nid_back_url: finalGuarantorNidBackUrl,
@@ -447,6 +454,16 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     value={formData.father_mother_spouse}
                     onChange={(e) => setFormData({ ...formData, father_mother_spouse: e.target.value })}
                   />
+                </div>
+
+                {/* Father / Mother / Spouse NID Card Image Upload */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  {renderUploadBox(
+                    'পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড (Google Drive-এ সংরক্ষণ হবে)',
+                    'father_mother_spouse_nid_url',
+                    formData.father_mother_spouse_nid_url,
+                    'card'
+                  )}
                 </div>
 
                 {/* Member Mobile Number */}

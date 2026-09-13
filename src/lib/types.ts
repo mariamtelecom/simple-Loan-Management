@@ -21,6 +21,7 @@ export interface Member {
   nid_front_url?: string;    // সদস্যের NID কার্ডের সামনের অংশ (NID Card Front Image)
   nid_back_url?: string;     // সদস্যের NID কার্ডের পেছনের অংশ (NID Card Back Image)
   nid_image_url?: string;    // Legacy fallback NID image
+  father_mother_spouse_nid_url?: string; // পিতা/মাতা/স্ত্রী/স্বামীর NID কার্ড (Father/Mother/Spouse NID Image)
   guarantor_nid_front_url?: string; // জামিনদারের NID কার্ডের সামনের অংশ (Guarantor NID Front)
   guarantor_nid_back_url?: string;  // জামিনদারের NID কার্ডের পেছনের অংশ (Guarantor NID Back)
   guarantor_photo_url?: string;     // জামিনদারের ছবি (Guarantor Photo)
