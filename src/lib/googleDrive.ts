@@ -4,7 +4,7 @@
  */
 
 export interface ImageUploadItem {
-  key: 'photo_url' | 'nid_front_url' | 'nid_back_url' | 'father_mother_spouse_nid_url' | 'guarantor_photo_url' | 'guarantor_nid_front_url' | 'guarantor_nid_back_url';
+  key: 'photo_url' | 'nid_front_url' | 'nid_back_url' | 'father_mother_spouse_nid_url' | 'father_mother_spouse_nid_front_url' | 'father_mother_spouse_nid_back_url' | 'guarantor_photo_url' | 'guarantor_nid_front_url' | 'guarantor_nid_back_url';
   base64: string;
   fileName?: string;
 }
@@ -16,6 +16,8 @@ export interface GoogleDriveUploadResult {
     nid_front_url?: string;
     nid_back_url?: string;
     father_mother_spouse_nid_url?: string;
+    father_mother_spouse_nid_front_url?: string;
+    father_mother_spouse_nid_back_url?: string;
     guarantor_photo_url?: string;
     guarantor_nid_front_url?: string;
     guarantor_nid_back_url?: string;

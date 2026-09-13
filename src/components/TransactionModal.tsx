@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, PlusCircle, AlertCircle } from 'lucide-react';
+import { X, PlusCircle, AlertCircle, CheckCircle2, PartyPopper, Banknote, CreditCard, TrendingDown } from 'lucide-react';
 import styles from './TransactionModal.module.css';
 import { Transaction } from '@/lib/types';
 import { Language, translations } from '@/lib/i18n';
@@ -44,6 +44,19 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [savedData, setSavedData] = useState<{
+    deposit: number;
+    withdraw: number;
+    repayment: number;
+    installmentNo: string;
+    date: string;
+    collector: string;
+  } | null>(null);
+
+  const handleClose = () => {
+    setSavedData(null);
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -85,7 +98,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         collector_signature: collectorSignature,
         notes
       });
-      onClose();
+      // Show success screen instead of closing immediately
+      setSavedData({
+        deposit: dep,
+        withdraw: wth,
+        repayment: rep,
+        installmentNo,
+        date: dateFormatted,
+        collector: collectorSignature
+      });
     } catch (err) {
       console.error('Failed adding transaction', err);
     } finally {
@@ -93,12 +114,106 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     }
   };
 
+  // ── SUCCESS SCREEN ─────────────────────────────────────
+  if (savedData) {
+    return (
+      <div className={styles.overlay} onClick={handleClose}>
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          {/* Success Header */}
+          <div className={styles.successHeader}>
+            <button onClick={handleClose} className={styles.closeBtn}>
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Animated Icon */}
+          <div className={styles.successBody}>
+            <div className={styles.successIconRing}>
+              <CheckCircle2 size={44} />
+            </div>
+
+            <div className={styles.successConfetti}>
+              <PartyPopper size={22} />
+            </div>
+
+            <h3 className={styles.successTitle}>
+              আপনার লেনদেনটি সফলভাবে হয়েছে!
+            </h3>
+            <p className={styles.successSubtitle}>
+              নতুন লেনদেন সফলভাবে ডাটাবেজে সংরক্ষিত হয়েছে।
+            </p>
+
+            {/* Summary Card */}
+            <div className={styles.successCard}>
+              {/* Date & Collector */}
+              <div className={styles.successCardRow} style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.65rem', marginBottom: '0.1rem' }}>
+                <span className={styles.successCardLabel}>📅 তারিখ ও সময়</span>
+                <span className={styles.successCardVal}>{savedData.date}</span>
+              </div>
+
+              {savedData.deposit > 0 && (
+                <div className={styles.successCardRow}>
+                  <span className={styles.successCardLabel}>
+                    <Banknote size={13} style={{ display: 'inline', marginRight: 3, color: '#059669' }} />
+                    সঞ্চয় জমা
+                  </span>
+                  <span className={styles.successCardVal} style={{ color: '#059669', fontWeight: 800 }}>
+                    + ৳ {savedData.deposit.toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              {savedData.withdraw > 0 && (
+                <div className={styles.successCardRow}>
+                  <span className={styles.successCardLabel}>
+                    <TrendingDown size={13} style={{ display: 'inline', marginRight: 3, color: '#dc2626' }} />
+                    সঞ্চয় উত্তোলন
+                  </span>
+                  <span className={styles.successCardVal} style={{ color: '#dc2626', fontWeight: 800 }}>
+                    − ৳ {savedData.withdraw.toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              {savedData.repayment > 0 && (
+                <div className={styles.successCardRow}>
+                  <span className={styles.successCardLabel}>
+                    <CreditCard size={13} style={{ display: 'inline', marginRight: 3, color: '#2563eb' }} />
+                    {savedData.installmentNo ? `কিস্তি আদায় (#${savedData.installmentNo})` : 'ঋণ আদায়'}
+                  </span>
+                  <span className={styles.successCardVal} style={{ color: '#2563eb', fontWeight: 800 }}>
+                    ৳ {savedData.repayment.toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              <div className={styles.successCardRow} style={{ marginTop: '0.2rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-color)' }}>
+                <span className={styles.successCardLabel}>✍️ আদায়কারী</span>
+                <span className={styles.successCardVal}>{savedData.collector}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleClose}
+              className={`btn btn-primary ${styles.successDoneBtn}`}
+            >
+              <CheckCircle2 size={17} />
+              <span>সম্পন্ন</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // ────────────────────────────────────────────────────────
+
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} onClick={handleClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2 className={styles.title}>{t.addTransaction}</h2>
-          <button onClick={onClose} className={styles.closeBtn}>
+          <button onClick={handleClose} className={styles.closeBtn}>
             <X size={20} />
           </button>
         </div>
@@ -230,7 +345,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div className={styles.footer}>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="btn btn-secondary btn-sm"
               disabled={submitting}
             >
@@ -242,7 +357,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               disabled={submitting}
             >
               <PlusCircle size={16} />
-              <span>{submitting ? '...' : t.save}</span>
+              <span>{submitting ? 'সংরক্ষণ হচ্ছে...' : t.save}</span>
             </button>
           </div>
         </form>

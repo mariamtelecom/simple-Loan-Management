@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS public.members (
     guarantor_nid_front_url TEXT DEFAULT '',    -- জামিনদারের NID সামনের অংশ (Guarantor NID Front)
     guarantor_nid_back_url TEXT DEFAULT '',     -- জামিনদারের NID পেছনের অংশ (Guarantor NID Rear/Back)
     guarantor_photo_url TEXT DEFAULT '',        -- জামিনদারের ছবি (Guarantor Photo)
+    father_mother_spouse_nid_front_url TEXT DEFAULT '', -- পিতা/মাতা/স্ত্রী/স্বামীর NID সামনের অংশ (Father/Mother/Spouse NID Front)
+    father_mother_spouse_nid_back_url TEXT DEFAULT '',  -- পিতা/মাতা/স্ত্রী/স্বামীর NID পেছনের অংশ (Father/Mother/Spouse NID Rear/Back)
     drive_folder_url TEXT DEFAULT '',           -- Google Drive ফোল্ডার লিঙ্ক (Google Drive Folder URL)
     status VARCHAR(20) DEFAULT 'active',        -- active, closed
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -48,6 +50,8 @@ CREATE TABLE IF NOT EXISTS public.members (
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_nid_back_url TEXT DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_photo_url TEXT DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS drive_folder_url TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_mother_spouse_nid_front_url TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_mother_spouse_nid_back_url TEXT DEFAULT '';
 
 -- Index for fast member lookup
 CREATE INDEX IF NOT EXISTS idx_members_member_no ON public.members(member_no);
