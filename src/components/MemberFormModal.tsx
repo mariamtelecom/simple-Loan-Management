@@ -447,7 +447,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
                 {/* Full Name */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>
-                  <label className={styles.label}>{t.memberName} *</label>
+                  <label className={styles.label}>সদস্যের {t.memberName} *</label>
                   <input
                     type="text"
                     required
@@ -457,7 +457,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
-                
+                 <div className={styles.sectionDivider}>
+                  <h4 className={styles.sectionTitle}>
+                    <User size={18} />
+                    <span>সদস্যের ছবি ও NID ডকুমেন্টস (Member Photo & NID Front/Rear)</span>
+                  </h4>
+                </div>
                 {/* 1. Member Photo */}
                 {renderUploadBox('সদস্যের ছবি (Photo)', 'photo_url', formData.photo_url, 'user')}
 
@@ -526,13 +531,13 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 <div className={styles.sectionDivider}>
                   <h4 className={styles.sectionTitle}>
                     <User size={18} />
-                    <span>সদস্যের ছবি ও NID ডকুমেন্টস (Member Photo & NID Front/Rear)</span>
+                    <span>সদস্যের পিতা / মাতা / স্ত্রী / স্বামীর NID ডকুমেন্টস </span>
                   </h4>
                 </div>
  {/* Father / Mother / Spouse NID Card - Front Part */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>
                   {renderUploadBox(
-                    'পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — সামনের অংশ (Front)',
+                    'সদস্যের পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — সামনের অংশ (Front)',
                     'father_mother_spouse_nid_front_url',
                     formData.father_mother_spouse_nid_front_url,
                     'card'
@@ -542,7 +547,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 {/* Father / Mother / Spouse NID Card - Rear Part */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>
                   {renderUploadBox(
-                    'পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — পেছনের অংশ (Rear)',
+                    'সদস্যের পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — পেছনের অংশ (Rear)',
                     'father_mother_spouse_nid_back_url',
                     formData.father_mother_spouse_nid_back_url,
                     'card'
