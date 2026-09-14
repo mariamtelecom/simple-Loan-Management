@@ -3,8 +3,17 @@
 -- Updated with Member Photo, NID Card Image, NID Number, Member Address, Full Guarantor Details & Father/Spouse Type Selector
 -- ========================================================
 
--- Enable UUID extension if not enabled SAJJAD JIM
+-- Enable UUID extension if not enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ========================================================
+-- 🔒 SAFE MODE: Tables are created with IF NOT EXISTS.
+-- Existing tables and existing data will NEVER be deleted.
+-- (Only uncomment the DROP lines below if you explicitly want to wipe everything!)
+-- ========================================================
+-- DROP TABLE IF EXISTS public.transactions CASCADE;
+-- DROP TABLE IF EXISTS public.loans CASCADE;
+-- DROP TABLE IF EXISTS public.members CASCADE;
 
 -- 1. MEMBERS TABLE (সদস্য টেবিল)
 CREATE TABLE IF NOT EXISTS public.members (
@@ -68,7 +77,24 @@ CREATE TABLE IF NOT EXISTS public.members (
 -- Index for fast member lookup
 CREATE INDEX IF NOT EXISTS idx_members_member_no ON public.members(member_no);
 
--- 2. TRANSACTIONS TABLE (লেনদেন / লেজার টেবিল)
+-- 2. LOANS TABLE (ঋণ টেবিল - Multi-Loan support)
+CREATE TABLE IF NOT EXISTS public.loans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    member_id UUID NOT NULL REFERENCES public.members(id) ON DELETE CASCADE,
+    loan_no INT NOT NULL DEFAULT 1,             -- ঋণের ক্রম (1, 2, 3...)
+    loan_amount NUMERIC(12, 2) NOT NULL DEFAULT 0, -- ঋণের পরিমাণ
+    loan_purpose VARCHAR(255) DEFAULT '',       -- ঋণের উদ্দেশ্য
+    total_installments INT DEFAULT 15,          -- কিস্তির সংখ্যা
+    admission_date DATE DEFAULT CURRENT_DATE,   -- ভর্তির তারিখ
+    status VARCHAR(20) DEFAULT 'active',        -- active, closed
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for ordering loans per member
+CREATE INDEX IF NOT EXISTS idx_loans_member ON public.loans(member_id, loan_no ASC);
+
+-- 3. TRANSACTIONS TABLE (লেনদেন / লেজার টেবিল)
 CREATE TABLE IF NOT EXISTS public.transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     member_id UUID NOT NULL REFERENCES public.members(id) ON DELETE CASCADE,
@@ -89,40 +115,35 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 -- Index for ordering transactions per member
 CREATE INDEX IF NOT EXISTS idx_transactions_member_date ON public.transactions(member_id, date ASC, created_at ASC);
 
--- 3. LOANS TABLE (ঋণ টেবিল - Multi-Loan support)
-CREATE TABLE IF NOT EXISTS public.loans (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    member_id UUID NOT NULL REFERENCES public.members(id) ON DELETE CASCADE,
-    loan_no INT NOT NULL DEFAULT 1,             -- ঋণের ক্রম (1, 2, 3...)
-    loan_amount NUMERIC(12, 2) NOT NULL DEFAULT 0, -- ঋণের পরিমাণ
-    loan_purpose VARCHAR(255) DEFAULT '',       -- ঋণের উদ্দেশ্য
-    total_installments INT DEFAULT 15,          -- কিস্তির সংখ্যা
-    admission_date DATE DEFAULT CURRENT_DATE,   -- ভর্তির তারিখ
-    status VARCHAR(20) DEFAULT 'active',        -- active, closed
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Index for ordering loans per member
-CREATE INDEX IF NOT EXISTS idx_loans_member ON public.loans(member_id, loan_no ASC);
-
 -- Row Level Security (RLS) Enable
 ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.loans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
--- Permissive policies for standard public API access
+-- Permissive policies for standard public API access (with DROP IF EXISTS to allow safe re-running)
+DROP POLICY IF EXISTS "Allow public read members" ON public.members;
 CREATE POLICY "Allow public read members" ON public.members FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert members" ON public.members;
 CREATE POLICY "Allow public insert members" ON public.members FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update members" ON public.members;
 CREATE POLICY "Allow public update members" ON public.members FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete members" ON public.members;
 CREATE POLICY "Allow public delete members" ON public.members FOR DELETE USING (true);
 
-CREATE POLICY "Allow public read transactions" ON public.transactions FOR SELECT USING (true);
-CREATE POLICY "Allow public insert transactions" ON public.transactions FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update transactions" ON public.transactions FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete transactions" ON public.transactions FOR DELETE USING (true);
-
+DROP POLICY IF EXISTS "Allow public read loans" ON public.loans;
 CREATE POLICY "Allow public read loans" ON public.loans FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert loans" ON public.loans;
 CREATE POLICY "Allow public insert loans" ON public.loans FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update loans" ON public.loans;
 CREATE POLICY "Allow public update loans" ON public.loans FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete loans" ON public.loans;
 CREATE POLICY "Allow public delete loans" ON public.loans FOR DELETE USING (true);
+
+DROP POLICY IF EXISTS "Allow public read transactions" ON public.transactions;
+CREATE POLICY "Allow public read transactions" ON public.transactions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public insert transactions" ON public.transactions;
+CREATE POLICY "Allow public insert transactions" ON public.transactions FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow public update transactions" ON public.transactions;
+CREATE POLICY "Allow public update transactions" ON public.transactions FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow public delete transactions" ON public.transactions;
+CREATE POLICY "Allow public delete transactions" ON public.transactions FOR DELETE USING (true);
