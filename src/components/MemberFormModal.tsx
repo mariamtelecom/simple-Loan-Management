@@ -457,39 +457,21 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
+                
+                {/* 1. Member Photo */}
+                {renderUploadBox('সদস্যের ছবি (Photo)', 'photo_url', formData.photo_url, 'user')}
 
-                {/* Borrower Father / Mother / Spouse Name */}
-                <div className={`${styles.field} ${styles.fullWidth}`}>
-                  <label className={styles.label}>{t.fatherMotherSpouse}</label>
-                  <input
-                    type="text"
-                    className={styles.input}
-                    placeholder="e.g. পিতা/মাতা/স্ত্রী/স্বামীর নাম"
-                    value={formData.father_mother_spouse}
-                    onChange={(e) => setFormData({ ...formData, father_mother_spouse: e.target.value })}
-                  />
+                {/* 2. Member NID Card (Front Part) */}
+                {renderUploadBox('সদস্যের NID কার্ড (সামনের অংশ)', 'nid_front_url', formData.nid_front_url, 'card')}
+
+                {/* 3. Member NID Card (Rear/Back Part) */}
+                <div className={styles.fullWidth}>
+                  {renderUploadBox('সদস্যের NID কার্ড (পেছনের অংশ)', 'nid_back_url', formData.nid_back_url, 'card')}
                 </div>
 
-                {/* Father / Mother / Spouse NID Card - Front Part */}
-                <div className={`${styles.field} ${styles.fullWidth}`}>
-                  {renderUploadBox(
-                    'পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — সামনের অংশ (Front)',
-                    'father_mother_spouse_nid_front_url',
-                    formData.father_mother_spouse_nid_front_url,
-                    'card'
-                  )}
-                </div>
+                
 
-                {/* Father / Mother / Spouse NID Card - Rear Part */}
-                <div className={`${styles.field} ${styles.fullWidth}`}>
-                  {renderUploadBox(
-                    'পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — পেছনের অংশ (Rear)',
-                    'father_mother_spouse_nid_back_url',
-                    formData.father_mother_spouse_nid_back_url,
-                    'card'
-                  )}
-                </div>
-
+               
                 {/* Member Mobile Number */}
                 <div className={styles.field}>
                   <label className={styles.label}>{t.mobile} *</label>
@@ -528,6 +510,18 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   />
                 </div>
 
+                {/* Borrower Father / Mother / Spouse Name */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  <label className={styles.label}>{t.fatherMotherSpouse}</label>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    placeholder="e.g. পিতা/মাতা/স্ত্রী/স্বামীর নাম"
+                    value={formData.father_mother_spouse}
+                    onChange={(e) => setFormData({ ...formData, father_mother_spouse: e.target.value })}
+                  />
+                </div>
+
                 {/* SECTION 2: MEMBER DOCUMENTS (PHOTO, NID FRONT, NID REAR) */}
                 <div className={styles.sectionDivider}>
                   <h4 className={styles.sectionTitle}>
@@ -535,16 +529,24 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     <span>সদস্যের ছবি ও NID ডকুমেন্টস (Member Photo & NID Front/Rear)</span>
                   </h4>
                 </div>
+ {/* Father / Mother / Spouse NID Card - Front Part */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  {renderUploadBox(
+                    'পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — সামনের অংশ (Front)',
+                    'father_mother_spouse_nid_front_url',
+                    formData.father_mother_spouse_nid_front_url,
+                    'card'
+                  )}
+                </div>
 
-                {/* 1. Member Photo */}
-                {renderUploadBox('সদস্যের ছবি (Photo)', 'photo_url', formData.photo_url, 'user')}
-
-                {/* 2. Member NID Card (Front Part) */}
-                {renderUploadBox('সদস্যের NID কার্ড (সামনের অংশ)', 'nid_front_url', formData.nid_front_url, 'card')}
-
-                {/* 3. Member NID Card (Rear/Back Part) */}
-                <div className={styles.fullWidth}>
-                  {renderUploadBox('সদস্যের NID কার্ড (পেছনের অংশ)', 'nid_back_url', formData.nid_back_url, 'card')}
+                {/* Father / Mother / Spouse NID Card - Rear Part */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  {renderUploadBox(
+                    'পিতা / মাতা / স্ত্রী / স্বামীর NID কার্ড — পেছনের অংশ (Rear)',
+                    'father_mother_spouse_nid_back_url',
+                    formData.father_mother_spouse_nid_back_url,
+                    'card'
+                  )}
                 </div>
 
                 {/* SECTION 3: GUARANTOR (JAMINDAR) DETAILS & DOCUMENTS */}
