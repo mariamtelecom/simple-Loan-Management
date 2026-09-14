@@ -447,7 +447,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
 
                 {/* Full Name */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>
-                  <label className={styles.label}>সদস্যের {t.memberName} *</label>
+                  <label className={styles.label}>{t.memberName} *</label>
                   <input
                     type="text"
                     required
@@ -472,11 +472,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 {/* 3. Member NID Card (Rear/Back Part) */}
                 <div className={styles.fullWidth}>
                   {renderUploadBox('সদস্যের NID কার্ড (পেছনের অংশ)', 'nid_back_url', formData.nid_back_url, 'card')}
-                </div>
-
-                
-
-               
+                </div>               
                 {/* Member Mobile Number */}
                 <div className={styles.field}>
                   <label className={styles.label}>{t.mobile} *</label>
@@ -489,7 +485,6 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                   />
                 </div>
-
                 {/* Member NID Card Number */}
                 <div className={styles.field}>
                   <label className={styles.label}>{t.nidNumber} *</label>
@@ -502,19 +497,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, nid_number: e.target.value })}
                   />
                 </div>
-
-                {/* Member Address */}
-                <div className={`${styles.field} ${styles.fullWidth}`}>
-                  <label className={styles.label}>{t.memberAddress}</label>
-                  <input
-                    type="text"
-                    className={styles.input}
-                    placeholder="e.g. গ্রাম: রামপুর, ডাকঘর: বাজার রোড"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
-                </div>
-
+                
                 {/* Borrower Father / Mother / Spouse Name */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>
                   <label className={styles.label}>{t.fatherMotherSpouse}</label>
@@ -524,6 +507,17 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     placeholder="e.g. পিতা/মাতা/স্ত্রী/স্বামীর নাম"
                     value={formData.father_mother_spouse}
                     onChange={(e) => setFormData({ ...formData, father_mother_spouse: e.target.value })}
+                  />
+                </div>
+                {/* Member Address */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  <label className={styles.label}>{t.memberAddress}</label>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    placeholder="e.g. গ্রাম: রামপুর, ডাকঘর: বাজার রোড"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>
 

@@ -14,8 +14,8 @@ export const translations = {
     // Header Info (From Image + Updates)
     bookNo: "বই নং / পৃষ্ঠা",
     memberNo: "সদস্য নম্বর",
-    memberName: "নাম",
-    fatherMotherSpouse: "পিতার নাম / মাতার নাম / স্ত্রী / স্বামীর নাম",
+    memberName: "সদস্যের নাম",
+    fatherMotherSpouse: "সদস্যের পিতার নাম / মাতার নাম / স্ত্রী / স্বামীর নাম",
     loanAmount: "ঋণের পরিমাণ",
     savingsInitial: "সঞ্চয় জমা সহ",
     loanPurpose: "ঋণের উদ্দেশ্য",
@@ -29,10 +29,10 @@ export const translations = {
     guarantorMobile: "জামিনদারের মোবাইল",
     guarantorAddress: "জামিনদারের ঠিকানা",
     guarantorNid: "জামিনদারের NID নম্বর",
-    nidNumber: "এনআইডি (NID) নম্বর",
+    nidNumber: "সদস্যের এনআইডি (NID) নম্বর",
     personPhoto: "সদস্যের ছবি (Photo)",
-    nidImage: "এনআইডি (NID) কার্ডের ছবি",
-    viewNid: "NID কার্ড দেখুন",
+    nidImage: "সদস্যের এনআইডি (NID) কার্ডের ছবি",
+    viewNid: "সদস্যের NID কার্ড দেখুন",
     noImage: "কোনো ছবি নেই",
     
     // Financial Summaries
