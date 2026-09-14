@@ -2,7 +2,13 @@ export interface Member {
   id: string;
   member_no: string;         // সদস্য নম্বর (e.g. "125" or "১২৫")
   name: string;              // নাম (e.g. "আনোয়ার হোসেন")
-  father_mother_spouse?: string; // পিতার নাম / মাতার নাম / স্ত্রী / স্বামীর নাম
+  father_mother_spouse?: string; // (Legacy) পিতার নাম / স্ত্রী / স্বামীর নাম
+  father_spouse_type?: 'পিতা' | 'স্ত্রী' | 'স্বামী' | ''; // সম্পর্কের ধরন (Relationship Type)
+  father_spouse_name?: string;    // পিতা / স্ত্রী / স্বামীর নাম
+  father_spouse_address?: string; // পিতা / স্ত্রী / স্বামীর ঠিকানা
+  father_spouse_nid?: string;     // পিতা / স্ত্রী / স্বামীর NID নম্বর
+  father_spouse_phone?: string;   // পিতা / স্ত্রী / স্বামীর ফোন নম্বর
+  father_spouse_father_name?: string; // পিতার পিতা / স্ত্রীর পিতা / স্বামীর পিতার নাম
   loan_amount: number;       // ঋণের পরিমাণ (e.g. 100000)
   savings_initial: number;   // সঞ্চয় জমা সহ (e.g. 20000)
   loan_purpose: string;      // ঋণের উদ্দেশ্য (e.g. "ব্যবসা")

@@ -57,6 +57,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     member_no: '',
     name: '',
     father_mother_spouse: '',
+    father_spouse_type: '' as '' | 'পিতা' | 'স্ত্রী' | 'স্বামী',
+    father_spouse_name: '',
+    father_spouse_father_name: '',
+    father_spouse_address: '',
+    father_spouse_nid: '',
+    father_spouse_phone: '',
     loan_amount: '',
     savings_initial: '',
     loan_purpose: '',
@@ -108,6 +114,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           member_no: initialData.member_no || '',
           name: initialData.name || '',
           father_mother_spouse: initialData.father_mother_spouse || '',
+          father_spouse_type: (initialData.father_spouse_type as '' | 'পিতা' | 'স্ত্রী' | 'স্বামী') || '',
+          father_spouse_name: initialData.father_spouse_name || '',
+          father_spouse_father_name: initialData.father_spouse_father_name || '',
+          father_spouse_address: initialData.father_spouse_address || '',
+          father_spouse_nid: initialData.father_spouse_nid || '',
+          father_spouse_phone: initialData.father_spouse_phone || '',
           loan_amount: String(initialData.loan_amount || ''),
           savings_initial: String(initialData.savings_initial || ''),
           loan_purpose: initialData.loan_purpose || '',
@@ -141,6 +153,12 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           member_no: auto.nextMemberNo,
           name: '',
           father_mother_spouse: '',
+          father_spouse_type: '' as '' | 'পিতা' | 'স্ত্রী' | 'স্বামী',
+          father_spouse_name: '',
+          father_spouse_father_name: '',
+          father_spouse_address: '',
+          father_spouse_nid: '',
+          father_spouse_phone: '',
           loan_amount: '',
           savings_initial: '0',
           loan_purpose: '',
@@ -280,7 +298,13 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
       await onSave({
         member_no: formData.member_no,
         name: formData.name,
-        father_mother_spouse: formData.father_mother_spouse,
+        father_mother_spouse: formData.father_mother_spouse || formData.father_spouse_name,
+        father_spouse_type: formData.father_spouse_type,
+        father_spouse_name: formData.father_spouse_name,
+        father_spouse_father_name: formData.father_spouse_father_name,
+        father_spouse_address: formData.father_spouse_address,
+        father_spouse_nid: formData.father_spouse_nid,
+        father_spouse_phone: formData.father_spouse_phone,
         loan_amount: Number(formData.loan_amount || 0),
         savings_initial: Number(formData.savings_initial || 0),
         loan_purpose: formData.loan_purpose,
@@ -498,17 +522,168 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   />
                 </div>
                 
-                {/* Borrower Father / Mother / Spouse Name */}
+                {/* Borrower Father / Spouse — Type Selector + Name + Contact Details */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>
-                  <label className={styles.label}>{t.fatherMotherSpouse}</label>
-                  <input
-                    type="text"
-                    className={styles.input}
-                    placeholder="e.g. পিতা/মাতা/স্ত্রী/স্বামীর নাম"
-                    value={formData.father_mother_spouse}
-                    onChange={(e) => setFormData({ ...formData, father_mother_spouse: e.target.value })}
-                  />
+                  <label className={styles.label}>
+                    সদস্যের সাথে সম্পর্ক (Relation Type) *
+                  </label>
+                  {/* Step 1: Radio buttons to pick relation type */}
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.75rem',
+                    marginBottom: '0.75rem',
+                    flexWrap: 'wrap'
+                  }}>
+                    {(['পিতা', 'স্ত্রী', 'স্বামী'] as const).map((type) => (
+                      <label
+                        key={type}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          cursor: 'pointer',
+                          padding: '0.4rem 0.85rem',
+                          borderRadius: '999px',
+                          border: `2px solid ${
+                            formData.father_spouse_type === type
+                              ? 'var(--primary, #6366f1)'
+                              : 'var(--border, #e2e8f0)'
+                          }`,
+                          background: formData.father_spouse_type === type
+                            ? 'var(--primary-light, #eef2ff)'
+                            : 'transparent',
+                          fontWeight: formData.father_spouse_type === type ? 700 : 400,
+                          color: formData.father_spouse_type === type
+                            ? 'var(--primary, #6366f1)'
+                            : 'inherit',
+                          fontSize: '0.875rem',
+                          transition: 'all 0.2s',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          name="father_spouse_type"
+                          value={type}
+                          checked={formData.father_spouse_type === type}
+                          onChange={() => setFormData({ ...formData, father_spouse_type: type })}
+                          style={{ accentColor: 'var(--primary, #6366f1)', width: 16, height: 16 }}
+                        />
+                        {type === 'পিতা' ? 'পিতা (বাবা)' : type === 'স্ত্রী' ? 'স্ত্রী (Wife)' : 'স্বামী (Husband)'}
+                      </label>
+                    ))}
+                  </div>
+
+                  {!formData.father_spouse_type ? (
+                    <div style={{
+                      marginTop: '0.4rem',
+                      padding: '0.65rem 0.9rem',
+                      borderRadius: '8px',
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px dashed #ef4444',
+                      color: '#dc2626',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>⚠️</span>
+                      <span>নাম লিখতে প্রথমে উপর থেকে সম্পর্ক বাছাই করুন (পিতা / স্ত্রী / স্বামী)</span>
+                    </div>
+                  ) : (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <label className={styles.label} style={{ marginBottom: '0.3rem', display: 'block' }}>
+                        {formData.father_spouse_type === 'পিতা' ? 'পিতার নাম' : formData.father_spouse_type === 'স্ত্রী' ? 'স্ত্রীর নাম' : 'স্বামীর নাম'}
+                      </label>
+                      <input
+                        type="text"
+                        className={styles.input}
+                        placeholder={`e.g. ${formData.father_spouse_type === 'পিতা' ? 'মোঃ আবদুল করিম' : formData.father_spouse_type === 'স্ত্রী' ? 'মরিয়াম বেগম' : 'মোঃ রফিকুল ইসলাম'}`}
+                        value={formData.father_spouse_name}
+                        onChange={(e) => setFormData({ ...formData, father_spouse_name: e.target.value })}
+                      />
+                    </div>
+                  )}
+
+
+                  {/* পিতার নাম field */}
+                  {formData.father_spouse_type && (
+                    <div style={{ marginTop: '0.6rem' }}>
+                      <label className={styles.label} style={{ marginBottom: '0.3rem', display: 'block' }}>
+                        {formData.father_spouse_name?.trim()
+                          ? `${formData.father_spouse_name.trim()} এর পিতার নাম`
+                          : formData.father_spouse_type === 'পিতা'
+                          ? 'পিতার পিতার নাম'
+                          : formData.father_spouse_type === 'স্ত্রী'
+                          ? 'স্ত্রীর পিতার নাম'
+                          : 'স্বামীর পিতার নাম'}
+                      </label>
+                      <input
+                        type="text"
+                        className={styles.input}
+                        placeholder={
+                          formData.father_spouse_name?.trim()
+                            ? `e.g. মোঃ আলমগীর হোসেন (${formData.father_spouse_name.trim()} এর পিতা)`
+                            : formData.father_spouse_type === 'পিতা'
+                            ? 'e.g. মোঃ আলমগীর হোসেন (পিতার পিতা)'
+                            : formData.father_spouse_type === 'স্ত্রী'
+                            ? 'e.g. মোঃ কারিম হোসেন (স্ত্রীর পিতা)'
+                            : 'e.g. মোঃ রহিম উদ্দিন (স্বামীর পিতা)'
+                        }
+                        value={formData.father_spouse_father_name}
+                        onChange={(e) => setFormData({ ...formData, father_spouse_father_name: e.target.value })}
+                      />
+                    </div>
+                  )}
                 </div>
+
+
+                {/* Step 3: Contact details for the selected person — shown once type is selected */}
+                {formData.father_spouse_type && (
+                  <>
+                    {/* Address / Thikana */}
+                    <div className={`${styles.field} ${styles.fullWidth}`}>
+                      <label className={styles.label}>
+                        {formData.father_spouse_type === 'পিতা' ? 'পিতার ঠিকানা' : formData.father_spouse_type === 'স্ত্রী' ? 'স্ত্রীর ঠিকানা' : 'স্বামীর ঠিকানা'}
+                      </label>
+                      <input
+                        type="text"
+                        className={styles.input}
+                        placeholder="e.g. গ্রাম: রামপুর, ডাকঘর: বাজার রোড"
+                        value={formData.father_spouse_address}
+                        onChange={(e) => setFormData({ ...formData, father_spouse_address: e.target.value })}
+                      />
+                    </div>
+
+                    {/* NID Number + Phone Number — side by side */}
+                    <div className={styles.field}>
+                      <label className={styles.label}>
+                        {formData.father_spouse_type === 'পিতা' ? 'পিতার NID নম্বর' : formData.father_spouse_type === 'স্ত্রী' ? 'স্ত্রীর NID নম্বর' : 'স্বামীর NID নম্বর'}
+                      </label>
+                      <input
+                        type="text"
+                        className={styles.input}
+                        placeholder="e.g. 19922694152000125"
+                        value={formData.father_spouse_nid}
+                        onChange={(e) => setFormData({ ...formData, father_spouse_nid: e.target.value })}
+                      />
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>
+                        {formData.father_spouse_type === 'পিতা' ? 'পিতার ফোন নম্বর' : formData.father_spouse_type === 'স্ত্রী' ? 'স্ত্রীর ফোন নম্বর' : 'স্বামীর ফোন নম্বর'}
+                      </label>
+                      <input
+                        type="tel"
+                        className={styles.input}
+                        placeholder="01712345678"
+                        value={formData.father_spouse_phone}
+                        onChange={(e) => setFormData({ ...formData, father_spouse_phone: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
                 {/* Member Address */}
                 <div className={`${styles.field} ${styles.fullWidth}`}>
                   <label className={styles.label}>{t.memberAddress}</label>

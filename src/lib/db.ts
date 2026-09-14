@@ -174,6 +174,13 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
     guarantor_nid_back_url: newMember.guarantor_nid_back_url || '',
     guarantor_photo_url: newMember.guarantor_photo_url || '',
     drive_folder_url: newMember.drive_folder_url || '',
+    // New: Father / Spouse relationship type and contact details
+    father_spouse_type: newMember.father_spouse_type || '',
+    father_spouse_name: newMember.father_spouse_name || '',
+    father_spouse_address: newMember.father_spouse_address || '',
+    father_spouse_nid: newMember.father_spouse_nid || '',
+    father_spouse_phone: newMember.father_spouse_phone || '',
+    father_spouse_father_name: newMember.father_spouse_father_name || '',
     status: 'active'
   };
 

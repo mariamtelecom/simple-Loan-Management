@@ -1,6 +1,6 @@
 -- ========================================================
 -- Simple Loan Management System - Supabase PostgreSQL Schema
--- Updated with Member Photo, NID Card Image, NID Number, Member Address & Full Guarantor Details
+-- Updated with Member Photo, NID Card Image, NID Number, Member Address, Full Guarantor Details & Father/Spouse Type Selector
 -- ========================================================
 
 -- Enable UUID extension if not enabled SAJJAD JIM
@@ -11,7 +11,13 @@ CREATE TABLE IF NOT EXISTS public.members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     member_no VARCHAR(50) UNIQUE NOT NULL,      -- সদস্য নম্বর (e.g., 125)
     name VARCHAR(255) NOT NULL,                 -- নাম (e.g., আনোয়ার হোসেন)
-    father_mother_spouse VARCHAR(255) DEFAULT '', -- পিতার নাম / মাতার নাম / স্ত্রী / স্বামীর নাম
+    father_mother_spouse VARCHAR(255) DEFAULT '', -- (Legacy) পিতার নাম / স্ত্রী / স্বামীর নাম
+    father_spouse_type VARCHAR(10) DEFAULT '',   -- সম্পর্কের ধরন: 'পিতা' | 'স্ত্রী' | 'স্বামী'
+    father_spouse_name VARCHAR(255) DEFAULT '', -- পিতা / স্ত্রী / স্বামীর নাম
+    father_spouse_address TEXT DEFAULT '',      -- পিতা / স্ত্রী / স্বামীর ঠিকানা
+    father_spouse_nid VARCHAR(50) DEFAULT '',   -- পিতা / স্ত্রী / স্বামীর NID নম্বর
+    father_spouse_phone VARCHAR(30) DEFAULT '', -- পিতা / স্ত্রী / স্বামীর ফোন নম্বর
+    father_spouse_father_name VARCHAR(255) DEFAULT '', -- পিতার পিতা / স্ত্রীর পিতা / স্বামীর পিতার নাম
     loan_amount NUMERIC(12, 2) NOT NULL DEFAULT 0, -- ঋণের পরিমাণ (e.g., 100000)
     savings_initial NUMERIC(12, 2) NOT NULL DEFAULT 0, -- প্রাথমিক সঞ্চয় জমা সহ
     loan_purpose VARCHAR(255) DEFAULT '',       -- ঋণের উদ্দেশ্য
@@ -52,6 +58,12 @@ CREATE TABLE IF NOT EXISTS public.members (
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS drive_folder_url TEXT DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_mother_spouse_nid_front_url TEXT DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_mother_spouse_nid_back_url TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_spouse_type VARCHAR(10) DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_spouse_name VARCHAR(255) DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_spouse_address TEXT DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_spouse_nid VARCHAR(50) DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_spouse_phone VARCHAR(30) DEFAULT '';
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_spouse_father_name VARCHAR(255) DEFAULT '';
 
 -- Index for fast member lookup
 CREATE INDEX IF NOT EXISTS idx_members_member_no ON public.members(member_no);
