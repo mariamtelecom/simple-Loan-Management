@@ -151,7 +151,8 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
   const memberPayload = {
     member_no: newMember.member_no,
     name: newMember.name,
-    father_mother_spouse: newMember.father_mother_spouse || '',
+    father_name: newMember.father_name || '',
+    father_mother_spouse: newMember.father_name || newMember.father_mother_spouse || '',
     loan_amount: Number(newMember.loan_amount),
     savings_initial: Number(newMember.savings_initial),
     loan_purpose: newMember.loan_purpose,
@@ -196,6 +197,7 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
       } else if (error) {
         console.warn('Primary Supabase insert warning, trying basic payload fallback:', error.message);
         const basicPayload = { ...memberPayload };
+        delete (basicPayload as Record<string, unknown>).father_name;
         delete (basicPayload as Record<string, unknown>).father_mother_spouse;
         delete (basicPayload as Record<string, unknown>).guarantor_father_mother_spouse;
 

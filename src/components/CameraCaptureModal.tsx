@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Camera, RefreshCw, Check, X, AlertTriangle, SwitchCamera } from 'lucide-react';
+import { Camera, RefreshCw, Check, X, AlertTriangle, SwitchCamera, FlipHorizontal } from 'lucide-react';
 import styles from './CameraCaptureModal.module.css';
 import { compressDataUrl } from '@/lib/imageCompressor';
 
@@ -23,6 +23,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [isFlipped, setIsFlipped] = useState<boolean>(true);
   const [compressing, setCompressing] = useState(false);
 
   // Initialize Camera Stream
@@ -88,7 +89,15 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
 
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (isFlipped) {
+        ctx.save();
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      } else {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
       const rawDataUrl = canvas.toDataURL('image/jpeg', 0.9);
       setCapturedUrl(rawDataUrl);
 
@@ -103,6 +112,27 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
   // Retake photo
   const handleRetake = () => {
     setCapturedUrl(null);
+  };
+
+  // Flip already captured photo horizontally
+  const handleFlipCaptured = () => {
+    if (!capturedUrl) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.save();
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, 0, 0);
+        ctx.restore();
+        setCapturedUrl(canvas.toDataURL('image/jpeg', 0.9));
+      }
+    };
+    img.src = capturedUrl;
   };
 
   // Confirm photo selection
@@ -154,7 +184,12 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
             </div>
           ) : (
             <>
-              <video ref={videoRef} autoPlay playsInline className={styles.video} />
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className={`${styles.video} ${isFlipped ? styles.flipped : ''}`}
+              />
               <div className={styles.frameGuide}>
                 <span className={styles.guideBadge}>ফ্রেমে সোজা করে রাখুন</span>
               </div>
@@ -171,6 +206,15 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
                 <span>পুনরায় তুলুন</span>
               </button>
               <button
+                type="button"
+                onClick={handleFlipCaptured}
+                className="btn btn-secondary btn-sm"
+                title="ছবি ফ্লিপ / সোজা করুন"
+              >
+                <FlipHorizontal size={15} />
+                <span>ছবি ফ্লিপ</span>
+              </button>
+              <button
                 onClick={handleConfirm}
                 disabled={compressing}
                 className="btn btn-primary btn-sm"
@@ -182,12 +226,23 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({
           ) : (
             <>
               <button
+                type="button"
                 onClick={handleToggleCamera}
                 className="btn btn-secondary btn-sm"
-                title="ক্যামেরা ফ্লিপ করুন"
+                title="ক্যামেরা পরিবর্তন করুন"
               >
                 <SwitchCamera size={16} />
                 <span>ক্যামেরা পরিবর্তন</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsFlipped((prev) => !prev)}
+                className="btn btn-secondary btn-sm"
+                title="ছবি ডানে-বামে ফ্লিপ / সোজা করুন"
+              >
+                <FlipHorizontal size={16} />
+                <span>{isFlipped ? 'স্বাভাবিক ভিউ' : 'ফ্লিপ (Mirror)'}</span>
               </button>
 
               <button

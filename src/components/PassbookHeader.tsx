@@ -213,10 +213,10 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
           </div>
 
           {/* Member Father / Mother / Spouse Details */}
-          {member.father_mother_spouse && (
+          {(member.father_name || member.father_mother_spouse) && (
             <div className={styles.infoItem}>
-              <span className={styles.label}>{t.fatherMotherSpouse}</span>
-              <span className={styles.value}>{member.father_mother_spouse}</span>
+              <span className={styles.label}>{member.father_name ? t.fatherName : t.fatherMotherSpouse}</span>
+              <span className={styles.value}>{member.father_name || member.father_mother_spouse}</span>
             </div>
           )}
 

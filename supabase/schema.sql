@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.members (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     member_no VARCHAR(50) UNIQUE NOT NULL,      -- সদস্য নম্বর (e.g., 125)
     name VARCHAR(255) NOT NULL,                 -- নাম (e.g., আনোয়ার হোসেন)
+    father_name VARCHAR(255) DEFAULT '',        -- সদস্যের পিতার নাম
     father_mother_spouse VARCHAR(255) DEFAULT '', -- (Legacy) পিতার নাম / স্ত্রী / স্বামীর নাম
     father_spouse_type VARCHAR(10) DEFAULT '',   -- সম্পর্কের ধরন: 'পিতা' | 'স্ত্রী' | 'স্বামী'
     father_spouse_name VARCHAR(255) DEFAULT '', -- পিতা / স্ত্রী / স্বামীর নাম
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS public.members (
 );
 
 -- SQL Migration snippet for existing Supabase databases:
+-- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_name VARCHAR(255) DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS father_mother_spouse VARCHAR(255) DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS guarantor_father_mother_spouse VARCHAR(255) DEFAULT '';
 -- ALTER TABLE public.members ADD COLUMN IF NOT EXISTS nid_front_url TEXT DEFAULT '';

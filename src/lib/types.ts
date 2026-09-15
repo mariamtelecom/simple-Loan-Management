@@ -2,6 +2,7 @@ export interface Member {
   id: string;
   member_no: string;         // সদস্য নম্বর (e.g. "125" or "১২৫")
   name: string;              // নাম (e.g. "আনোয়ার হোসেন")
+  father_name?: string;      // সদস্যের পিতার নাম (Member Father Name)
   father_mother_spouse?: string; // (Legacy) পিতার নাম / স্ত্রী / স্বামীর নাম
   father_spouse_type?: 'পিতা' | 'স্ত্রী' | 'স্বামী' | ''; // সম্পর্কের ধরন (Relationship Type)
   father_spouse_name?: string;    // পিতা / স্ত্রী / স্বামীর নাম

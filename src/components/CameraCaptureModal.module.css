@@ -71,6 +71,10 @@
   object-fit: cover;
 }
 
+.flipped {
+  transform: scaleX(-1);
+}
+
 .frameGuide {
   position: absolute;
   inset: 20px;

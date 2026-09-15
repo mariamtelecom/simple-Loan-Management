@@ -15,7 +15,8 @@ import {
   FileText,
   DollarSign,
   Folder,
-  CloudUpload
+  CloudUpload,
+  Lock
 } from 'lucide-react';
 import styles from './MemberFormModal.module.css';
 import { Member } from '@/lib/types';
@@ -56,6 +57,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
   const [formData, setFormData] = useState({
     member_no: '',
     name: '',
+    father_name: '',
     father_mother_spouse: '',
     father_spouse_type: '' as '' | 'পিতা' | 'স্ত্রী' | 'স্বামী',
     father_spouse_name: '',
@@ -113,6 +115,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         setFormData({
           member_no: initialData.member_no || '',
           name: initialData.name || '',
+          father_name: (initialData as any).father_name || initialData.father_mother_spouse || '',
           father_mother_spouse: initialData.father_mother_spouse || '',
           father_spouse_type: (initialData.father_spouse_type as '' | 'পিতা' | 'স্ত্রী' | 'স্বামী') || '',
           father_spouse_name: initialData.father_spouse_name || '',
@@ -152,6 +155,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         setFormData({
           member_no: auto.nextMemberNo,
           name: '',
+          father_name: '',
           father_mother_spouse: '',
           father_spouse_type: '' as '' | 'পিতা' | 'স্ত্রী' | 'স্বামী',
           father_spouse_name: '',
@@ -298,7 +302,8 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
       await onSave({
         member_no: formData.member_no,
         name: formData.name,
-        father_mother_spouse: formData.father_mother_spouse || formData.father_spouse_name,
+        father_name: formData.father_name,
+        father_mother_spouse: formData.father_name || formData.father_mother_spouse || formData.father_spouse_name,
         father_spouse_type: formData.father_spouse_type,
         father_spouse_name: formData.father_spouse_name,
         father_spouse_father_name: formData.father_spouse_father_name,
@@ -430,23 +435,32 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
             <div className={styles.form}>
               <div className={styles.grid}>
                 {/* SECTION 1: MEMBER BASIC INFO */}
-                {/* Member No (Auto Generated) */}
+                {/* Member No (Auto Counted / Locked - Not Editable) */}
                 <div className={styles.field}>
                   <label className={styles.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>{t.memberNo} *</span>
-                    {isAutoAssigned && (
-                      <span className="badge badge-success" style={{ fontSize: '0.675rem', padding: '0.1rem 0.4rem' }}>
-                        <Sparkles size={10} /> অটো জেনারেট
-                      </span>
-                    )}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Lock size={13} style={{ color: '#64748b' }} />
+                      <span>{t.memberNo} *</span>
+                    </span>
+                    <span className="badge badge-success" style={{ fontSize: '0.675rem', padding: '0.1rem 0.45rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Sparkles size={10} /> অটো কাউন্ট (লকড)
+                    </span>
                   </label>
                   <input
                     type="text"
-                    required
+                    readOnly
+                    tabIndex={-1}
                     className={styles.input}
+                    style={{
+                      backgroundColor: '#f1f5f9',
+                      color: '#334155',
+                      cursor: 'not-allowed',
+                      fontWeight: 700,
+                      borderColor: '#cbd5e1'
+                    }}
+                    title="সদস্য নম্বর স্বয়ংক্রিয়ভাবে গণনা করা হয়, এটি পরিবর্তনযোগ্য নয়।"
                     placeholder="e.g. ১২৬"
                     value={formData.member_no}
-                    onChange={(e) => setFormData({ ...formData, member_no: e.target.value })}
                   />
                 </div>
 
@@ -497,6 +511,19 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                 <div className={styles.fullWidth}>
                   {renderUploadBox('সদস্যের NID কার্ড (পেছনের অংশ)', 'nid_back_url', formData.nid_back_url, 'card')}
                 </div>               
+
+                {/* Member Father's Name (সদস্যের পিতার নাম) */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  <label className={styles.label}>{t.fatherName}</label>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    placeholder="e.g. সদস্যের পিতার নাম লিখুন"
+                    value={formData.father_name}
+                    onChange={(e) => setFormData({ ...formData, father_name: e.target.value })}
+                  />
+                </div>
+
                 {/* Member Mobile Number */}
                 <div className={styles.field}>
                   <label className={styles.label}>{t.mobile} *</label>
