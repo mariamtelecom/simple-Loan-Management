@@ -67,7 +67,7 @@ export const LoanFormModal: React.FC<LoanFormModalProps> = ({
         loan_no: 0, // Auto calculated in db helper
         loan_amount: Number(loanAmount),
         loan_purpose: loanPurpose,
-        total_installments: Number(totalInstallments || 44),
+        total_installments: Number(totalInstallments ),
         admission_date: dateFormatted,
         status: 'active'
       }, Number(savingsInitial || 0));

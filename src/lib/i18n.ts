@@ -23,7 +23,7 @@ export const translations = {
     loanAmount: "ঋণের পরিমাণ",
     savingsInitial: "সঞ্চয় জমা সহ",
     loanPurpose: "ঋণের উদ্দেশ্য",
-    admissionDate: "ভর্তির তারিখ",
+    admissionDate: "ঋণ নেয়ার তারিখ",
     totalInstallments: "কিস্তির সংখ্যা",
     mobile: "সদস্যের মোবাইল",
     memberAddress: "সদস্যের ঠিকানা",

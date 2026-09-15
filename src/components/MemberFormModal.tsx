@@ -67,7 +67,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
     savings_initial: '',
     loan_purpose: '',
     admission_date: new Date().toISOString().split('T')[0],
-    total_installments: '44',
+    total_installments: '0',
     mobile: '',
     address: '',
     book_no: '',
@@ -124,7 +124,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           savings_initial: String(initialData.savings_initial || ''),
           loan_purpose: initialData.loan_purpose || '',
           admission_date: initialData.admission_date || new Date().toISOString().split('T')[0],
-          total_installments: String(initialData.total_installments || 44),
+          total_installments: String(initialData.total_installments ),
           mobile: initialData.mobile || '',
           address: initialData.address || '',
           book_no: initialData.book_no || '১',
@@ -163,7 +163,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
           savings_initial: '0',
           loan_purpose: '',
           admission_date: new Date().toISOString().split('T')[0],
-          total_installments: '44',
+          total_installments: '0',
           mobile: '',
           address: '',
           book_no: auto.nextBookNo,
@@ -309,7 +309,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
         savings_initial: Number(formData.savings_initial || 0),
         loan_purpose: formData.loan_purpose,
         admission_date: formData.admission_date,
-        total_installments: Number(formData.total_installments || 44),
+        total_installments: Number(formData.total_installments ),
         mobile: formData.mobile,
         address: formData.address,
         book_no: formData.book_no,
@@ -476,7 +476,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     type="text"
                     required
                     className={styles.input}
-                    placeholder="e.g. আনোয়ার হোসেন"
+                    placeholder="e.g. সদস্যের নাম লিখুন"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
@@ -504,7 +504,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     type="tel"
                     required
                     className={styles.input}
-                    placeholder="01712345678"
+                    placeholder="+8801712345678"
                     value={formData.mobile}
                     onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                   />
@@ -519,6 +519,17 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     placeholder="e.g. 19922694152000125"
                     value={formData.nid_number}
                     onChange={(e) => setFormData({ ...formData, nid_number: e.target.value })}
+                  />
+                </div>
+                {/* Member Address */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  <label className={styles.label}>{t.memberAddress}</label>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    placeholder="e.g. গ্রাম: মির্জাপুর, ডাকঘর: বাজার রোড, জেলাঃ টাঙ্গাইল"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>
                 
@@ -599,7 +610,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       <input
                         type="text"
                         className={styles.input}
-                        placeholder={`e.g. ${formData.father_spouse_type === 'পিতা' ? 'মোঃ আবদুল করিম' : formData.father_spouse_type === 'স্ত্রী' ? 'মরিয়াম বেগম' : 'মোঃ রফিকুল ইসলাম'}`}
+                        placeholder={`e.g. ${formData.father_spouse_type === 'পিতা' ? 'পিতা নাম লিখুন' : formData.father_spouse_type === 'স্ত্রী' ? 'স্ত্রীর নাম লিখুন' : 'স্বামীর নাম লিখুন'}`}
                         value={formData.father_spouse_name}
                         onChange={(e) => setFormData({ ...formData, father_spouse_name: e.target.value })}
                       />
@@ -626,10 +637,10 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                           formData.father_spouse_name?.trim()
                             ? `e.g. মোঃ আলমগীর হোসেন (${formData.father_spouse_name.trim()} এর পিতা)`
                             : formData.father_spouse_type === 'পিতা'
-                            ? 'e.g. মোঃ আলমগীর হোসেন (পিতার পিতা)'
+                            ? 'e.g. (পিতার পিতা)'
                             : formData.father_spouse_type === 'স্ত্রী'
-                            ? 'e.g. মোঃ কারিম হোসেন (স্ত্রীর পিতা)'
-                            : 'e.g. মোঃ রহিম উদ্দিন (স্বামীর পিতা)'
+                            ? 'e.g. (স্ত্রীর পিতা)'
+                            : 'e.g. (স্বামীর পিতা)'
                         }
                         value={formData.father_spouse_father_name}
                         onChange={(e) => setFormData({ ...formData, father_spouse_father_name: e.target.value })}
@@ -650,7 +661,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       <input
                         type="text"
                         className={styles.input}
-                        placeholder="e.g. গ্রাম: রামপুর, ডাকঘর: বাজার রোড"
+                        placeholder="e.g. গ্রাম: মির্জাপুর, ডাকঘর: বাজার রোড, জেলাঃ টাঙ্গাইল"
                         value={formData.father_spouse_address}
                         onChange={(e) => setFormData({ ...formData, father_spouse_address: e.target.value })}
                       />
@@ -677,24 +688,14 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                       <input
                         type="tel"
                         className={styles.input}
-                        placeholder="01712345678"
+                        placeholder="+8801712345678"
                         value={formData.father_spouse_phone}
                         onChange={(e) => setFormData({ ...formData, father_spouse_phone: e.target.value })}
                       />
                     </div>
                   </>
                 )}
-                {/* Member Address */}
-                <div className={`${styles.field} ${styles.fullWidth}`}>
-                  <label className={styles.label}>{t.memberAddress}</label>
-                  <input
-                    type="text"
-                    className={styles.input}
-                    placeholder="e.g. গ্রাম: রামপুর, ডাকঘর: বাজার রোড"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  />
-                </div>
+                
 
                 {/* SECTION 2: MEMBER DOCUMENTS (PHOTO, NID FRONT, NID REAR) */}
                 <div className={styles.sectionDivider}>
@@ -738,7 +739,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     type="text"
                     required
                     className={styles.input}
-                    placeholder="e.g. জামিনদারের নাম (মোঃ রফিকুল ইসলাম)"
+                    placeholder="e.g. জামিনদারের নাম লিখুন"
                     value={formData.guarantor_name}
                     onChange={(e) => setFormData({ ...formData, guarantor_name: e.target.value })}
                   />
@@ -750,7 +751,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   <input
                     type="text"
                     className={styles.input}
-                    placeholder="e.g. জামিনদারের পিতা/মাতা/স্ত্রী/স্বামীর নাম"
+                    placeholder="e.g. জামিনদারের পিতা/মাতা/স্ত্রী/স্বামীর নাম লিখুন"
                     value={formData.guarantor_father_mother_spouse}
                     onChange={(e) => setFormData({ ...formData, guarantor_father_mother_spouse: e.target.value })}
                   />
@@ -763,7 +764,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                     type="tel"
                     required
                     className={styles.input}
-                    placeholder="01799887766"
+                    placeholder="+8801799887766"
                     value={formData.guarantor_mobile}
                     onChange={(e) => setFormData({ ...formData, guarantor_mobile: e.target.value })}
                   />
@@ -845,7 +846,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   <input
                     type="text"
                     className={styles.input}
-                    placeholder="e.g. ব্যবসা"
+                    placeholder="e.g. কি উদ্দেশে ঋণ প্রদান করা হচ্ছে তা লিখুন"
                     value={formData.loan_purpose}
                     onChange={(e) => setFormData({ ...formData, loan_purpose: e.target.value })}
                   />
@@ -857,7 +858,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({
                   <input
                     type="number"
                     className={styles.input}
-                    placeholder="44"
+                    placeholder=" কিস্তির সংখ্যা লিখুন"
                     value={formData.total_installments}
                     onChange={(e) => setFormData({ ...formData, total_installments: e.target.value })}
                   />

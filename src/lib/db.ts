@@ -216,7 +216,7 @@ export async function createMember(member: Omit<Member, 'id' | 'created_at'>): P
             loan_no: 1,
             loan_amount: Number(newMember.loan_amount || 0),
             loan_purpose: newMember.loan_purpose || 'সাধারণ ঋণ',
-            total_installments: Number(newMember.total_installments || 44),
+            total_installments: Number(newMember.total_installments ),
             admission_date: newMember.admission_date || new Date().toISOString().split('T')[0],
             status: 'active'
           };
@@ -388,7 +388,7 @@ export async function getLoansForMember(memberId: string): Promise<Loan[]> {
     loan_no: 1,
     loan_amount: Number(member.loan_amount || 0),
     loan_purpose: member.loan_purpose || 'সাধারণ ঋণ',
-    total_installments: Number(member.total_installments || 44),
+    total_installments: Number(member.total_installments ),
     admission_date: member.admission_date || new Date().toISOString().split('T')[0],
     status: member.status || 'active',
     created_at: member.created_at
@@ -864,7 +864,7 @@ export async function getDashboardDataBatch(): Promise<{
       loan_no: 1,
       loan_amount: Number(member.loan_amount || 0),
       loan_purpose: member.loan_purpose || 'সাধারণ ঋণ',
-      total_installments: Number(member.total_installments || 44),
+      total_installments: Number(member.total_installments ),
       admission_date: member.admission_date || new Date().toISOString().split('T')[0],
       status: member.status || 'active',
       created_at: member.created_at

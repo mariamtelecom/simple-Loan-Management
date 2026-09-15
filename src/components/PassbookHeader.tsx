@@ -41,7 +41,7 @@ export const PassbookHeader: React.FC<PassbookHeaderProps> = ({
   // Active Loan fallback to member defaults if activeLoan not passed
   const currentLoanAmount = activeLoan ? activeLoan.loan_amount : (member.loan_amount || 0);
   const currentLoanPurpose = activeLoan ? activeLoan.loan_purpose : (member.loan_purpose || '-');
-  const currentTotalInstallments = activeLoan ? activeLoan.total_installments : (member.total_installments || 44);
+  const currentTotalInstallments = activeLoan ? activeLoan.total_installments : (member.total_installments );
   const currentAdmissionDate = activeLoan ? activeLoan.admission_date : (member.admission_date || '-');
   const currentLoanNo = activeLoan ? activeLoan.loan_no : 1;
 
